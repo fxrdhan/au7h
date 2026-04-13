@@ -1,0 +1,11 @@
+<VirtualHost *:${APP_PORT_HTTP}>
+    ServerName localhost
+    ServerSignature Off
+
+    RewriteEngine On
+    RewriteCond %{HTTP_HOST} ^([^:]+)(?::\d+)?$ [NC]
+    RewriteRule ^ https://%1${PUBLIC_HTTPS_SUFFIX}%{REQUEST_URI} [R=301,L,NE]
+
+    ErrorLog /proc/self/fd/2
+    CustomLog /proc/self/fd/1 combined
+</VirtualHost>
