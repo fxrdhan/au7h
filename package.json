@@ -1,7 +1,7 @@
 {
-  "name": "kamsis-secure-auth",
+  "name": "au7h",
   "version": "1.0.0",
-  "description": "Dev tooling for the PHP-based secure auth container app.",
+  "description": "Dev tooling for the PHP-based Au7h secure auth app.",
   "private": true,
   "scripts": {
     "build:css": "tailwindcss -i ./resources/tailwind.css -o ./public/styles.css --minify",

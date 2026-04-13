@@ -21,18 +21,18 @@ ENV APP_PORT_HTTP=8080 \
     APP_DATA_DIR=/var/www/data \
     DB_HOST=127.0.0.1 \
     DB_PORT=3306 \
-    DB_NAME=kamsis_auth \
-    DB_USER=kamsis_app \
+    DB_NAME=au7h_auth \
+    DB_USER=au7h_app \
     CERT_DIR=/var/www/certs \
     MYSQL_DATA_DIR=/var/lib/mysql \
-    MYSQL_DATABASE=kamsis_auth \
-    MYSQL_APP_USER=kamsis_app \
+    MYSQL_DATABASE=au7h_auth \
+    MYSQL_APP_USER=au7h_app \
     MYSQL_PORT=3306 \
     TLS_CERT_PATH=/var/www/certs/server.crt \
     TLS_KEY_PATH=/var/www/certs/server.key
 
-COPY docker/php.ini /etc/php/8.4/apache2/conf.d/90-kamsis-security.ini
-COPY docker/apache-global.conf /etc/apache2/conf-available/zzz-kamsis-global.conf
+COPY docker/php.ini /etc/php/8.4/apache2/conf.d/90-au7h-security.ini
+COPY docker/apache-global.conf /etc/apache2/conf-available/zzz-au7h-global.conf
 COPY docker/apache-http.conf.template /etc/apache2/sites-available/http-redirect.conf.template
 COPY docker/apache-ssl.conf.template /etc/apache2/sites-available/app-ssl.conf.template
 COPY app /var/www/html/app
@@ -40,7 +40,7 @@ COPY public /var/www/html/public
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint-custom.sh
 
 RUN mkdir -p /var/www/data /var/www/certs /var/run/mysqld /var/lib/mysql \
-  && a2enconf zzz-kamsis-global \
+  && a2enconf zzz-au7h-global \
   && chmod +x /usr/local/bin/docker-entrypoint-custom.sh \
   && chown -R www-data:www-data /var/www \
   && chown -R mysql:mysql /var/run/mysqld /var/lib/mysql

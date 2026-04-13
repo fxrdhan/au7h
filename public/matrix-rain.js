@@ -6,7 +6,7 @@
   }
 
   const originalPlay = MatrixAnimationCtor.prototype.play
-  if (!MatrixAnimationCtor.prototype.__kamsisFadePatched) {
+  if (!MatrixAnimationCtor.prototype.__au7hFadePatched) {
     MatrixAnimationCtor.prototype.play = function playWithCustomFade() {
       if (this.fadeInterval) clearInterval(this.fadeInterval)
       if (this.frameId) cancelAnimationFrame(this.frameId)
@@ -20,8 +20,8 @@
       this.render()
     }
 
-    MatrixAnimationCtor.prototype.__kamsisFadePatched = true
-    MatrixAnimationCtor.prototype.__kamsisOriginalPlay = originalPlay
+    MatrixAnimationCtor.prototype.__au7hFadePatched = true
+    MatrixAnimationCtor.prototype.__au7hOriginalPlay = originalPlay
   }
 
   const matrixPreset = {
