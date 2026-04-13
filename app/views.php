@@ -77,13 +77,13 @@ function render_auth_field(
     return '
       <div class="space-y-2.5">
         <label class="block text-[13px] font-semibold text-foreground" for="' . escape_html($name) . '">' . escape_html($label) . '</label>
-        <input
+          <input
           id="' . escape_html($name) . '"
           name="' . escape_html($name) . '"
           type="' . escape_html($type) . '"
           autocomplete="' . escape_html($autocomplete) . '"
           placeholder="' . escape_html($placeholder) . '"
-          class="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition placeholder:text-zinc-400 focus:border-zinc-300 focus:ring-2 focus:ring-zinc-200/70"' . $requiredAttribute . '
+          class="flex h-14 w-full rounded-[1.9rem] border-[5px] border-zinc-400 bg-white px-6 text-[1.05rem] font-medium text-zinc-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(24,24,27,0.04)] outline-none transition placeholder:font-normal placeholder:text-zinc-400 hover:border-zinc-500 hover:outline hover:outline-2 hover:outline-black hover:outline-offset-0 focus:border-zinc-600 focus:outline focus:outline-2 focus:outline-black focus:outline-offset-0 focus:text-zinc-900 focus:ring-0"' . $requiredAttribute . '
         >' . $hintMarkup . '
       </div>';
 }
