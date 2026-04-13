@@ -11,12 +11,19 @@ function db_connection(): PDO
     }
 
     $config = app_config();
-    $pdo = new PDO('sqlite:' . $config['db_path']);
+    $dsn = sprintf(
+        'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+        $config['db_host'],
+        $config['db_port'],
+        $config['db_name']
+    );
+    $pdo = new PDO($dsn, $config['db_user'], $config['db_password'], [
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ]);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    $pdo->exec('PRAGMA journal_mode = WAL');
-    $pdo->exec('PRAGMA foreign_keys = ON');
-    $pdo->exec('PRAGMA secure_delete = ON');
+    $pdo->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+    $pdo->exec("SET SESSION sql_mode = 'STRICT_ALL_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'");
 
     return $pdo;
 }
@@ -27,20 +34,20 @@ function initialize_database(): void
 
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username_lookup TEXT NOT NULL UNIQUE,
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            username_lookup CHAR(64) NOT NULL UNIQUE,
             username_encrypted TEXT NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )'
+            password_hash VARCHAR(255) NOT NULL,
+            created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
 
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS auth_rate_limits (
-            rate_key TEXT PRIMARY KEY,
+            rate_key CHAR(64) NOT NULL PRIMARY KEY,
             attempts INTEGER NOT NULL,
             window_start INTEGER NOT NULL
-        )'
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
 }
 
@@ -92,7 +99,7 @@ function create_user(string $usernameLookup, string $usernameEncrypted, string $
         'username_lookup' => $usernameLookup,
         'username_encrypted' => $usernameEncrypted,
         'password_hash' => $passwordHash,
-        'created_at' => gmdate(DATE_ATOM),
+        'created_at' => gmdate('Y-m-d H:i:s.u'),
     ]);
 }
 
@@ -117,7 +124,7 @@ function consume_rate_limit(string $bucket): bool
       $upsert = $pdo->prepare(
           'INSERT INTO auth_rate_limits (rate_key, attempts, window_start)
            VALUES (:rate_key, 1, :window_start)
-           ON CONFLICT(rate_key) DO UPDATE SET attempts = 1, window_start = :window_start'
+           ON DUPLICATE KEY UPDATE attempts = VALUES(attempts), window_start = VALUES(window_start)'
       );
       $upsert->execute([
           'rate_key' => $rateKey,

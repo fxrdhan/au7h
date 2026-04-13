@@ -1,12 +1,12 @@
 # Kamsis Secure Auth PHP
 
-Project ini sekarang memakai PHP, bukan JavaScript, dengan satu container saja: web server Apache HTTPS dan database SQLite berada di container yang sama.
+Project ini sekarang memakai PHP, bukan JavaScript, dengan satu container saja: web server Apache HTTPS dan database MySQL berada di container yang sama.
 
 ## Stack
 
 - PHP 8.4
 - Apache
-- SQLite
+- MySQL
 - Docker
 
 ## Fitur
@@ -15,7 +15,7 @@ Project ini sekarang memakai PHP, bukan JavaScript, dengan satu container saja: 
 - Landing page sukses: `Selamat datang, <username>`.
 - Landing page gagal: `Anda belum terdaftar`.
 - HTTPS aktif dengan sertifikat self-signed yang dibuat otomatis saat container pertama kali jalan.
-- Database SQLite berada di satu container dengan web server.
+- Database MySQL berada di satu container dengan web server dan hanya bind ke `127.0.0.1`.
 
 ## Lokasi Project
 
@@ -39,6 +39,7 @@ docker run --name kamsis-secure-auth \
   -p 8443:8443 \
   -v kamsis-secure-auth-data:/var/www/data \
   -v kamsis-secure-auth-certs:/var/www/certs \
+  -v kamsis-secure-auth-mysql:/var/lib/mysql \
   kamsis-secure-auth
 ```
 
@@ -55,6 +56,9 @@ docker run --name kamsis-secure-auth \
   -p 28080:8080 \
   -p 28443:8443 \
   -e PUBLIC_HTTPS_PORT=28443 \
+  -v kamsis-secure-auth-data:/var/www/data \
+  -v kamsis-secure-auth-certs:/var/www/certs \
+  -v kamsis-secure-auth-mysql:/var/lib/mysql \
   kamsis-secure-auth
 ```
 
@@ -64,6 +68,7 @@ docker run --name kamsis-secure-auth \
 - `Integrity form`: semua form punya CSRF token, session cookie `HttpOnly + SameSite=Strict`, dan ukuran body request dibatasi di `php.ini`.
 - `Privacy database`: password disimpan dengan `password_hash(..., PASSWORD_ARGON2ID)`. Username tidak disimpan polos, tetapi dienkripsi `AES-256-GCM`.
 - `Jika database dump bocor`: attacker hanya melihat `username_encrypted`, `username_lookup` hasil `HMAC-SHA256`, dan `password_hash`.
+- `Server database`: MySQL tidak diekspos ke luar container; koneksi aplikasi hanya ke `127.0.0.1:3306`.
 - `Buffer overflow`: logic utama memakai PHP yang memory-safe, lalu input panjang dan ukuran POST dibatasi.
 - `SQL injection`: query database memakai `PDO prepared statements`.
 - `XSS security`: output memakai `htmlspecialchars`, ditambah CSP dan security headers dari Apache.

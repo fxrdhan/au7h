@@ -25,7 +25,11 @@ function app_config(): array
     }
 
     $config = [
-        'db_path' => env_string('DB_PATH', $dataDir . '/auth.db'),
+        'db_host' => env_string('DB_HOST', '127.0.0.1'),
+        'db_port' => env_string('DB_PORT', '3306'),
+        'db_name' => env_string('DB_NAME', 'kamsis_auth'),
+        'db_user' => env_string('DB_USER', 'kamsis_app'),
+        'db_password' => env_string('DB_PASSWORD', 'change-me'),
         'pepper_secret' => env_string('PEPPER_SECRET', 'replace-me-demo-pepper'),
         'encryption_key' => hash('sha256', env_string('ENCRYPTION_KEY', 'replace-me-demo-key'), true),
         'rate_limit_max_attempts' => 10,
