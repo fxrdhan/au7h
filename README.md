@@ -1,8 +1,8 @@
-# Kamsis Secure Auth
+# Au7h
 
 ## Deskripsi
 
-Kamsis Secure Auth adalah aplikasi autentikasi berbasis PHP yang menyediakan proses registrasi dan login melalui Apache HTTPS. Aplikasi dijalankan dalam satu container Docker yang juga memuat MySQL untuk penyimpanan data pengguna.
+Au7h adalah aplikasi autentikasi berbasis PHP yang menyediakan proses registrasi dan login melalui Apache HTTPS. Aplikasi ini dirancang dengan 7 lapis keamanan yang saling melengkapi, lalu dijalankan dalam satu container Docker yang juga memuat MySQL untuk penyimpanan data pengguna.
 
 ## Ruang Lingkup
 
@@ -29,19 +29,19 @@ Prasyarat:
 Build image:
 
 ```bash
-docker build -t kamsis-secure-auth .
+docker build -t au7h .
 ```
 
 Jalankan container:
 
 ```bash
-docker run --name kamsis-secure-auth \
+docker run --name au7h \
   -p 8080:8080 \
   -p 8443:8443 \
-  -v kamsis-secure-auth-data:/var/www/data \
-  -v kamsis-secure-auth-certs:/var/www/certs \
-  -v kamsis-secure-auth-mysql:/var/lib/mysql \
-  kamsis-secure-auth
+  -v au7h-data:/var/www/data \
+  -v au7h-certs:/var/www/certs \
+  -v au7h-mysql:/var/lib/mysql \
+  au7h
 ```
 
 Akses aplikasi:
@@ -58,14 +58,14 @@ Catatan:
 Contoh:
 
 ```bash
-docker run --name kamsis-secure-auth \
+docker run --name au7h \
   -p 28080:8080 \
   -p 28443:8443 \
   -e PUBLIC_HTTPS_PORT=28443 \
-  -v kamsis-secure-auth-data:/var/www/data \
-  -v kamsis-secure-auth-certs:/var/www/certs \
-  -v kamsis-secure-auth-mysql:/var/lib/mysql \
-  kamsis-secure-auth
+  -v au7h-data:/var/www/data \
+  -v au7h-certs:/var/www/certs \
+  -v au7h-mysql:/var/lib/mysql \
+  au7h
 ```
 
 ## Penyimpanan Persisten
@@ -83,15 +83,12 @@ npm install
 npm run build:css
 ```
 
-## Kontrol Keamanan
+## 7 Lapis Keamanan
 
-- HTTPS aktif secara default
-- CSRF token pada form autentikasi
-- Session cookie dengan atribut `Secure`, `HttpOnly`, dan `SameSite=Strict`
-- Regenerasi session ID setelah login berhasil
-- Password disimpan menggunakan `Argon2id` dengan tambahan pepper
-- Username disimpan dalam bentuk terenkripsi `AES-256-GCM`
-- Pencarian username menggunakan `HMAC-SHA256`
-- Query database menggunakan `PDO prepared statements`
-- Pembatasan percobaan autentikasi berbasis rate limit
-- MySQL hanya mendengarkan pada `127.0.0.1` di dalam container
+1. HTTPS aktif secara default untuk mengamankan lalu lintas sejak awal.
+2. CSRF token dipakai di form autentikasi, dengan session cookie `Secure`, `HttpOnly`, dan `SameSite=Strict`.
+3. Session ID diregenerasi setelah login berhasil untuk mencegah session fixation.
+4. Password disimpan memakai `Argon2id` dengan tambahan pepper.
+5. Username disimpan dalam bentuk terenkripsi `AES-256-GCM`.
+6. Pencarian username menggunakan `HMAC-SHA256`, lalu query database tetap memakai `PDO prepared statements`.
+7. Percobaan autentikasi dibatasi dengan rate limit, sementara MySQL hanya mendengarkan pada `127.0.0.1` di dalam container.
