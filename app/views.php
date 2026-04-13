@@ -45,14 +45,14 @@ function render_auth_mark(): string
 function render_auth_placeholder(): string
 {
     return '
-      <div class="relative hidden min-h-svh overflow-hidden bg-zinc-200 lg:block">
+      <div class="relative hidden min-h-svh overflow-hidden bg-zinc-100 lg:block">
         <div
           class="absolute inset-0"
           data-matrix-rain
-          data-rain-background="#e4e4e7"
-          data-rain-fade-color="rgba(228,228,231,0.18)"
-          data-rain-color="rgba(24,24,27,0.74)"
-          data-rain-head-color="rgba(9,9,11,0.98)"
+          data-rain-background="#f4f4f5"
+          data-rain-fade-color="rgba(244,244,245,0.03)"
+          data-rain-color="rgba(62,225,78,1.00)"
+          data-rain-head-color="rgba(255,255,255,0.8)"
         ></div>
       </div>';
 }
