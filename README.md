@@ -1,35 +1,34 @@
-# Kamsis Secure Auth PHP
+# Kamsis Secure Auth
 
-Project ini sekarang memakai PHP, bukan JavaScript, dengan satu container saja: web server Apache HTTPS dan database MySQL berada di container yang sama.
+## Deskripsi
 
-## Stack
+Kamsis Secure Auth adalah aplikasi autentikasi berbasis PHP yang menyediakan proses registrasi dan login melalui Apache HTTPS. Aplikasi dijalankan dalam satu container Docker yang juga memuat MySQL untuk penyimpanan data pengguna.
+
+## Ruang Lingkup
+
+- Registrasi akun pengguna
+- Login pengguna
+- Halaman sambutan setelah autentikasi berhasil
+- Halaman informasi saat kredensial tidak valid
+
+## Teknologi
 
 - PHP 8.4
 - Apache
 - MySQL
-- Tailwind CSS
 - Docker
+- Tailwind CSS untuk aset antarmuka statis
 
-## Fitur
+## Menjalankan Aplikasi
 
-- Form `register` dan `login` yang bisa diakses lewat browser.
-- Tampilan auth bergaya `shadcn/ui` tetapi tetap dirender dari PHP biasa.
-- Landing page sukses: `Selamat datang, <username>`.
-- Landing page gagal: `Anda belum terdaftar`.
-- HTTPS aktif dengan sertifikat self-signed yang dibuat otomatis saat container pertama kali jalan.
-- Database MySQL berada di satu container dengan web server dan hanya bind ke `127.0.0.1`.
+Prasyarat:
 
-## Lokasi Project
-
-- Repo utama: `/srv/kamsis-secure-auth`
-- Symlink dari workspace: `/home/fxrdhan/Documents/kamsis-secure-auth`
-
-## Menjalankan
+- Docker
+- Node.js dan npm hanya diperlukan jika ingin membangun ulang file CSS
 
 Build image:
 
 ```bash
-cd /srv/kamsis-secure-auth
 docker build -t kamsis-secure-auth .
 ```
 
@@ -45,23 +44,18 @@ docker run --name kamsis-secure-auth \
   kamsis-secure-auth
 ```
 
-Buka di browser:
+Akses aplikasi:
 
-```text
-https://localhost:8443
-```
+- `http://localhost:8080`
+- `https://localhost:8443`
 
-## Build Frontend CSS
+Catatan:
 
-Tailwind dikompilasi lokal menjadi file statis [public/styles.css](/srv/kamsis-secure-auth/public/styles.css), jadi saat runtime container tidak butuh Node.js.
+- Seluruh akses HTTP dialihkan ke HTTPS.
+- Sertifikat TLS self-signed dibuat otomatis saat container pertama kali dijalankan.
+- Jika port HTTPS pada host diubah, atur `PUBLIC_HTTPS_PORT` agar pengalihan tetap sesuai.
 
-```bash
-cd /srv/kamsis-secure-auth
-npm install
-npm run build:css
-```
-
-Kalau port host HTTPS ingin diganti, misalnya ke `28443`, pakai env `PUBLIC_HTTPS_PORT` agar redirect dari HTTP tetap benar:
+Contoh:
 
 ```bash
 docker run --name kamsis-secure-auth \
@@ -74,50 +68,30 @@ docker run --name kamsis-secure-auth \
   kamsis-secure-auth
 ```
 
-## Sertifikat Trusted di Localhost
+## Penyimpanan Persisten
 
-Kalau browser masih menampilkan `Not secure`, itu berarti sertifikat HTTPS masih self-signed. Untuk localhost tanpa warning, pakai `mkcert` di host:
+- `/var/www/data` untuk rahasia runtime aplikasi
+- `/var/www/certs` untuk sertifikat TLS
+- `/var/lib/mysql` untuk data MySQL
 
-```bash
-sudo apt-get update
-sudo apt-get install -y mkcert libnss3-tools
-mkcert -install
-mkcert \
-  -cert-file /srv/kamsis-secure-auth/certs/server.crt \
-  -key-file /srv/kamsis-secure-auth/certs/server.key \
-  localhost 127.0.0.1 ::1
-```
+## Build CSS
 
-Lalu jalankan container dengan bind mount folder cert lokal:
+Langkah ini hanya diperlukan jika aset antarmuka diubah.
 
 ```bash
-docker run --name kamsis-secure-auth \
-  -p 8080:8080 \
-  -p 8443:8443 \
-  -v kamsis-secure-auth-data:/var/www/data \
-  -v /srv/kamsis-secure-auth/certs:/var/www/certs \
-  -v kamsis-secure-auth-mysql:/var/lib/mysql \
-  kamsis-secure-auth
+npm install
+npm run build:css
 ```
 
-Setelah `mkcert -install`, restart browser agar trust store baru terbaca.
+## Kontrol Keamanan
 
-## Mapping Keamanan
-
-- `HTTPS`: Apache melayani TLS dengan minimum `TLSv1.2`.
-- `Integrity form`: semua form punya CSRF token, session cookie `HttpOnly + SameSite=Strict`, dan ukuran body request dibatasi di `php.ini`.
-- `Privacy database`: password disimpan dengan `password_hash(..., PASSWORD_ARGON2ID)`. Username tidak disimpan polos, tetapi dienkripsi `AES-256-GCM`.
-- `Jika database dump bocor`: attacker hanya melihat `username_encrypted`, `username_lookup` hasil `HMAC-SHA256`, dan `password_hash`.
-- `Server database`: MySQL tidak diekspos ke luar container; koneksi aplikasi hanya ke `127.0.0.1:3306`.
-- `Buffer overflow`: logic utama memakai PHP yang memory-safe, lalu input panjang dan ukuran POST dibatasi.
-- `SQL injection`: query database memakai `PDO prepared statements`.
-- `XSS security`: output memakai `htmlspecialchars`, ditambah CSP dan security headers dari Apache.
-- `Server hardening`: `ServerSignature Off`, `TraceEnable Off`, HSTS, CSP, `nosniff`, dan rate limit sederhana untuk endpoint auth.
-
-## Git Workflow
-
-Repo ini tetap memakai `commitlint` untuk pesan commit:
-
-```bash
-npm run commitlint -- --from HEAD~1 --to HEAD
-```
+- HTTPS aktif secara default
+- CSRF token pada form autentikasi
+- Session cookie dengan atribut `Secure`, `HttpOnly`, dan `SameSite=Strict`
+- Regenerasi session ID setelah login berhasil
+- Password disimpan menggunakan `Argon2id` dengan tambahan pepper
+- Username disimpan dalam bentuk terenkripsi `AES-256-GCM`
+- Pencarian username menggunakan `HMAC-SHA256`
+- Query database menggunakan `PDO prepared statements`
+- Pembatasan percobaan autentikasi berbasis rate limit
+- MySQL hanya mendengarkan pada `127.0.0.1` di dalam container
