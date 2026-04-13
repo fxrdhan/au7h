@@ -18,16 +18,17 @@
   }
 
   function animateShellTransition(direction, phase) {
-    const distance = direction === "right" ? 64 : -64
+    const outgoingOffset = direction === "right" ? "100%" : "-100%"
+    const incomingOffset = direction === "right" ? "-100%" : "100%"
 
     if (phase === "out") {
       return shellContent.animate(
         [
-          { opacity: 1, transform: "translate3d(0, 0, 0)" },
-          { opacity: 0, transform: `translate3d(${distance * -1}px, 0, 0)` },
+          { transform: "translate3d(0, 0, 0)" },
+          { transform: `translate3d(${outgoingOffset}, 0, 0)` },
         ],
         {
-          duration: 210,
+          duration: 260,
           easing: "cubic-bezier(0.32, 0, 0.16, 1)",
           fill: "forwards",
         }
@@ -36,11 +37,11 @@
 
     return shellContent.animate(
       [
-        { opacity: 0, transform: `translate3d(${distance}px, 0, 0)` },
-        { opacity: 1, transform: "translate3d(0, 0, 0)" },
+        { transform: `translate3d(${incomingOffset}, 0, 0)` },
+        { transform: "translate3d(0, 0, 0)" },
       ],
       {
-        duration: 240,
+        duration: 280,
         easing: "cubic-bezier(0.22, 1, 0.36, 1)",
         fill: "forwards",
       }
