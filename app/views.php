@@ -184,28 +184,28 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
     $mode = in_array($mode, ['register', 'login'], true) ? $mode : 'register';
     $isRegister = $mode === 'register';
     $registerPanel = '
-      <div class="' . ($isRegister ? 'flex' : 'hidden lg:flex') . ' min-h-[32rem] items-center justify-center lg:justify-start">
-        <div class="w-full max-w-md rounded-[2rem] bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-sm md:p-10">
-          <div class="mb-10 flex items-center justify-start">
-            ' . render_auth_mark() . '
-          </div>
+      <div class="' . ($isRegister ? 'flex' : 'hidden lg:flex') . ' min-h-svh flex-col bg-white p-7 md:p-8">
+        <div class="flex items-center justify-start">
+          ' . render_auth_mark() . '
+        </div>
+        <div class="flex flex-1 items-center justify-center">
           ' . render_auth_form_card('register', $isRegister ? $flash : null) . '
         </div>
       </div>';
     $loginPanel = '
-      <div class="' . (!$isRegister ? 'flex' : 'hidden lg:flex') . ' min-h-[32rem] items-center justify-center lg:justify-end">
-        <div class="w-full max-w-md rounded-[2rem] bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-sm md:p-10">
-          <div class="mb-10 flex items-center justify-start">
-            ' . render_auth_mark() . '
-          </div>
+      <div class="' . (!$isRegister ? 'flex' : 'hidden lg:flex') . ' min-h-svh flex-col bg-white p-7 md:p-8">
+        <div class="flex items-center justify-start">
+          ' . render_auth_mark() . '
+        </div>
+        <div class="flex flex-1 items-center justify-center">
           ' . render_auth_form_card('login', !$isRegister ? $flash : null) . '
         </div>
       </div>';
+    $matrixSide = '<div class="hidden min-h-svh lg:block"></div>';
 
     $content = '
-      <section class="grid min-h-svh items-center p-6 md:p-10 lg:grid-cols-2 lg:gap-10">
-        ' . $registerPanel . '
-        ' . $loginPanel . '
+      <section class="grid min-h-svh lg:grid-cols-2">
+        ' . ($isRegister ? $registerPanel . $matrixSide : $matrixSide . $loginPanel) . '
       </section>';
 
     return render_layout('Kamsis Secure Login', $content);
