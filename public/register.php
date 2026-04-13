@@ -27,7 +27,7 @@ $password = (string) $passwordValidation['value'];
 $lookup = username_lookup($username);
 
 if (find_user_by_lookup($lookup) !== null) {
-    set_flash('error', 'Username sudah terdaftar. Silakan login.');
+    set_flash('success', 'Username sudah terdaftar. Silakan login.');
     redirect_to('/?mode=login');
 }
 

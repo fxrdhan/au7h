@@ -18,18 +18,22 @@ function render_flash(?array $flash): string
         . '</div>';
 }
 
+function render_logo_badge(string $sizeClass): string
+{
+    return '
+      <span class="inline-flex ' . $sizeClass . ' items-center justify-center overflow-hidden rounded-xl border border-zinc-300 bg-white shadow-soft">
+        <img src="/a-logo.svg" alt="" aria-hidden="true" style="width:100%;height:100%;object-fit:contain;">
+      </span>';
+}
+
 function render_brand(bool $inverse = false): string
 {
     $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
-    $subTextClass = $inverse ? 'text-zinc-400' : 'text-muted-foreground';
 
     return '
       <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight ' . $textClass . '">
-        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-soft">K</span>
-        <span class="flex flex-col leading-none">
-          <span>Kamsis Secure Auth</span>
-          <span class="mt-1 text-[11px] font-medium uppercase tracking-[0.22em] ' . $subTextClass . '">PHP + MySQL</span>
-        </span>
+        ' . render_logo_badge('h-9 w-9') . '
+        <span>Au7h</span>
       </a>';
 }
 
@@ -37,8 +41,8 @@ function render_auth_mark(): string
 {
     return '
       <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
-        <span class="flex h-5 w-5 items-center justify-center rounded-md border border-zinc-300 text-[11px] leading-none text-zinc-900">K</span>
-        <span>Acme Inc.</span>
+        ' . render_logo_badge('h-5 w-5') . '
+        <span>Au7h</span>
       </a>';
 }
 
@@ -155,7 +159,7 @@ function render_layout(string $title, string $content): string
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>' . escape_html($title) . '</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/a-logo.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
     <script src="/vendor/matrix-animation.js" defer></script>
     <script src="/vendor/motion.js" defer></script>
@@ -195,7 +199,7 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
       </div>';
     $loginPanel = '
       <div class="' . (!$isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 md:p-8">
-        <div class="absolute left-7 top-7 flex items-center justify-start md:left-8 md:top-8">
+        <div class="absolute right-7 top-7 flex items-center justify-end md:right-8 md:top-8">
           ' . render_auth_mark() . '
         </div>
         <div class="flex min-h-svh items-center justify-center py-20">
@@ -209,46 +213,42 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
         ' . ($isRegister ? $registerPanel . $matrixSide : $matrixSide . $loginPanel) . '
       </section>';
 
-    return render_layout('Kamsis Secure Login', $content);
+    return render_layout('Au7h Login', $content);
 }
 
 function render_welcome_page(string $username): string
 {
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div class="w-full max-w-2xl rounded-[2rem] bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-sm md:p-10">
-          <div class="space-y-8">
-            <div class="flex items-center justify-start">
-              ' . render_brand(false) . '
+        <div class="w-full max-w-2xl rounded-[2rem] bg-white/[0.99] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg md:p-10">
+          <div class="flex items-start justify-between gap-6">
+            <div class="space-y-6">
+              <div class="flex items-center justify-start">
+                ' . render_brand(false) . '
+              </div>
+              <h1 class="text-4xl font-semibold tracking-tight text-zinc-950">Selamat datang, ' . escape_html($username) . '!</h1>
             </div>
-            <div class="space-y-3">
-              <p class="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Autentikasi berhasil</p>
-              <h1 class="text-4xl font-semibold tracking-tight text-zinc-950">Selamat datang, ' . escape_html($username) . '</h1>
-              <p class="max-w-xl text-sm leading-7 text-muted-foreground">
-                Login berhasil. Session aktif dan user berhasil dibaca dari database MySQL dengan aman.
-              </p>
-            </div>
-            <form method="post" action="/logout.php" class="pt-2">
+            <form method="post" action="/logout.php" class="shrink-0 pt-1">
               <input type="hidden" name="csrf_token" value="' . escape_html(csrf_token()) . '">
-              <button class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white transition hover:bg-zinc-800" type="submit">Logout</button>
+              <button class="inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium text-rose-500 transition hover:bg-rose-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-rose-300" type="submit">Logout</button>
             </form>
           </div>
         </div>
       </section>';
 
-    return render_layout('Selamat Datang', $content);
+    return render_layout('Selamat Datang | Au7h', $content);
 }
 
 function render_not_registered_page(): string
 {
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div class="w-full max-w-xl rounded-[2rem] bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-sm md:p-10">
+        <div class="w-full max-w-xl rounded-[2rem] bg-white/[0.99] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg md:p-10">
           <div class="space-y-4">
-            <p class="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Autentikasi gagal</p>
             <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">Anda belum terdaftar</h1>
             <p class="text-sm leading-7 text-muted-foreground">
-              Username atau password tidak cocok. Coba login lagi atau register akun baru.
+              <span class="block">Username atau password tidak cocok.</span>
+              <span class="block">Coba login lagi atau daftarkan akun baru.</span>
             </p>
           </div>
           <div class="mt-8">
@@ -264,7 +264,7 @@ function render_error_page(string $title, string $description): string
 {
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div class="w-full max-w-xl rounded-[2rem] bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-sm md:p-10">
+        <div class="w-full max-w-xl rounded-[2rem] bg-white/[0.99] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg md:p-10">
           <p class="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Akses ditolak</p>
           <h1 class="mt-4 text-3xl font-semibold tracking-tight">' . escape_html($title) . '</h1>
           <p class="mt-3 text-sm leading-7 text-muted-foreground">' . escape_html($description) . '</p>
