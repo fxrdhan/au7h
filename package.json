@@ -1,0 +1,33 @@
+{
+  "name": "kamsis-secure-auth",
+  "version": "1.0.0",
+  "description": "Single-container HTTPS login/register app with SQLite and basic security hardening.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "NODE_ENV=development node src/server.js",
+    "commitlint": "commitlint --config commitlint.config.cjs"
+  },
+  "keywords": [
+    "express",
+    "sqlite",
+    "https",
+    "security",
+    "docker"
+  ],
+  "author": "Codex",
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0"
+  }
+}
