@@ -332,6 +332,7 @@
       shellContent.className = nextContent.className
       shellContent.innerHTML = nextContent.innerHTML
       document.title = nextDocument.title || document.title
+      document.dispatchEvent(new CustomEvent("au7h:contentupdated"))
 
       if (options.historyMode === "replace") {
         window.history.replaceState({}, "", finalUrl)

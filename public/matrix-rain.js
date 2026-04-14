@@ -120,24 +120,69 @@
     fadeColor: "rgba(255,255,255,0.03)",
   }
 
+  function readThemeValue(name, fallback) {
+    const value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return value || fallback
+  }
+
+  function getMatrixThemeConfig() {
+    return {
+      backgroundColor: readThemeValue("--rain-background", matrixPreset.backgroundColor),
+      eraseColor: readThemeValue("--rain-erase-color", matrixPreset.eraseColor),
+      fadeColor: readThemeValue("--rain-fade-color", matrixPreset.fadeColor),
+      headColor: readThemeValue("--rain-head-color", matrixPreset.rainDrop.headColor),
+      trailColor: readThemeValue("--rain-color", matrixPreset.rainDrop.trailColor),
+      trailColors: [
+        readThemeValue("--rain-trail-1", matrixPreset.rainDrop.trailColors[0]),
+        readThemeValue("--rain-trail-2", matrixPreset.rainDrop.trailColors[1]),
+        readThemeValue("--rain-trail-3", matrixPreset.rainDrop.trailColors[2]),
+        readThemeValue("--rain-trail-4", matrixPreset.rainDrop.trailColors[3]),
+        readThemeValue("--rain-trail-5", matrixPreset.rainDrop.trailColors[4]),
+      ],
+    }
+  }
+
+  function applyThemeToInstance(container, instance) {
+    const themeConfig = getMatrixThemeConfig()
+
+    container.style.backgroundColor = themeConfig.backgroundColor
+
+    instance.options.backgroundColor = themeConfig.backgroundColor
+    instance.options.fadeColor = themeConfig.fadeColor
+    instance.options.eraseColor = themeConfig.eraseColor
+    instance.options.rainDrop.headColor = themeConfig.headColor
+    instance.options.rainDrop.trailColor = themeConfig.trailColor
+    instance.options.rainDrop.trailColors = themeConfig.trailColors
+
+    instance.raindrops.forEach((raindrop) => {
+      raindrop.config.headColor = themeConfig.headColor
+      raindrop.config.trailColor = themeConfig.trailColor
+      raindrop.config.trailColors = themeConfig.trailColors
+      raindrop.trailChars = []
+    })
+    instance.ctx.fillStyle = themeConfig.backgroundColor
+    instance.ctx.fillRect(0, 0, instance.canvasWidth, instance.canvasHeight)
+  }
+
   function initializeMatrixRain(container) {
     if (container.__matrixRainInstance) {
       return
     }
 
     const config = structuredClone(matrixPreset)
-    const backgroundColor = container.dataset.rainBackground ?? config.backgroundColor
-    config.backgroundColor = backgroundColor
-    config.fadeColor = container.dataset.rainFadeColor ?? config.fadeColor
-    config.eraseColor = container.dataset.rainEraseColor ?? backgroundColor
-    config.rainDrop.headColor = container.dataset.rainHeadColor ?? config.rainDrop.headColor
-    config.rainDrop.trailColor = container.dataset.rainColor ?? config.rainDrop.trailColor
+    const themeConfig = getMatrixThemeConfig()
+    config.backgroundColor = themeConfig.backgroundColor
+    config.fadeColor = themeConfig.fadeColor
+    config.eraseColor = themeConfig.eraseColor
+    config.rainDrop.headColor = themeConfig.headColor
+    config.rainDrop.trailColor = themeConfig.trailColor
+    config.rainDrop.trailColors = themeConfig.trailColors
 
-    container.style.backgroundColor = backgroundColor
+    container.style.backgroundColor = themeConfig.backgroundColor
 
     const instance = new MatrixAnimationCtor(container, config)
     refineTrailRenderer(instance)
-    instance.ctx.fillStyle = backgroundColor
+    instance.ctx.fillStyle = themeConfig.backgroundColor
     instance.ctx.fillRect(0, 0, instance.canvasWidth, instance.canvasHeight)
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -150,6 +195,17 @@
   function boot() {
     document.querySelectorAll("[data-matrix-rain]").forEach(initializeMatrixRain)
   }
+
+  window.addEventListener("au7h:themechange", () => {
+    document.querySelectorAll("[data-matrix-rain]").forEach((container) => {
+      const instance = container.__matrixRainInstance
+      if (!instance) {
+        return
+      }
+
+      applyThemeToInstance(container, instance)
+    })
+  })
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot, { once: true })

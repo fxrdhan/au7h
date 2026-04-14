@@ -30,6 +30,50 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 0.85rem;
+    --rain-background: #ffffff;
+    --rain-erase-color: #ffffff;
+    --rain-fade-color: rgba(255,255,255,0.03);
+    --rain-color: rgba(24,24,27,0.74);
+    --rain-head-color: rgba(9,9,11,0.88);
+    --rain-trail-1: rgba(24,24,27,0.62);
+    --rain-trail-2: rgba(24,24,27,0.44);
+    --rain-trail-3: rgba(24,24,27,0.28);
+    --rain-trail-4: rgba(24,24,27,0.16);
+    --rain-trail-5: rgba(24,24,27,0.08);
+    --theme-transition-duration: 340ms;
+    --theme-transition-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  html.dark {
+    --background: 224 37% 8%;
+    --foreground: 210 40% 96%;
+    --card: 224 29% 12%;
+    --card-foreground: 210 40% 96%;
+    --popover: 224 29% 12%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 210 40% 96%;
+    --primary-foreground: 224 37% 8%;
+    --secondary: 222 25% 16%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 222 24% 16%;
+    --muted-foreground: 214 24% 82%;
+    --accent: 221 25% 18%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 350 72% 58%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 218 18% 26%;
+    --input: 218 18% 26%;
+    --ring: 210 40% 96%;
+    --rain-background: #080c18;
+    --rain-erase-color: #080c18;
+    --rain-fade-color: rgba(8,12,24,0.18);
+    --rain-color: rgba(148,163,184,0.22);
+    --rain-head-color: rgba(248,250,252,0.7);
+    --rain-trail-1: rgba(226,232,240,0.28);
+    --rain-trail-2: rgba(226,232,240,0.18);
+    --rain-trail-3: rgba(226,232,240,0.12);
+    --rain-trail-4: rgba(226,232,240,0.08);
+    --rain-trail-5: rgba(226,232,240,0.04);
   }
 
   * {
@@ -37,11 +81,23 @@
   }
 
   html {
+    background-color: hsl(var(--background));
     color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  html.theme-changing body,
+  html.theme-changing body *,
+  html.theme-changing body *::before,
+  html.theme-changing body *::after {
+    transition: none !important;
   }
 }

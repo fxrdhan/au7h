@@ -10,8 +10,8 @@ function render_flash(?array $flash): string
 
     $isSuccess = ($flash['type'] ?? 'error') === 'success';
     $className = $isSuccess
-        ? 'border-emerald-200/80 bg-emerald-50 text-emerald-700'
-        : 'border-rose-200/80 bg-rose-50 text-rose-700';
+        ? 'border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-200'
+        : 'border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-500/35 dark:bg-rose-500/10 dark:text-rose-200';
 
     return '<div class="rounded-xl border px-4 py-3 text-sm font-medium shadow-sm ' . $className . '" role="status">'
         . escape_html((string) $flash['text'])
@@ -21,11 +21,11 @@ function render_flash(?array $flash): string
 function render_brand(bool $inverse = false): string
 {
     $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
-    $iconStyle = $inverse ? ' style="filter: invert(1);"' : '';
+    $iconClass = $inverse ? 'invert' : 'dark:invert';
 
     return '
-      <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight ' . $textClass . '">
-        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0"' . $iconStyle . '>
+      <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight transition-colors duration-300 ' . $textClass . '">
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 transition duration-300 ' . $iconClass . '">
         <span>Au7h</span>
       </a>';
 }
@@ -33,10 +33,48 @@ function render_brand(bool $inverse = false): string
 function render_auth_mark(): string
 {
     return '
-      <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
-        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0">
+      <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground transition-colors duration-300 dark:text-white">
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 transition duration-300 dark:invert">
         <span>Au7h</span>
       </a>';
+}
+
+function render_theme_toggle_button(): string
+{
+    return '
+      <button
+        type="button"
+        data-theme-toggle
+        aria-label="Toggle color theme"
+        title="Toggle color theme"
+        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300/75 bg-white/85 text-zinc-700 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-zinc-500 hover:text-zinc-950 focus:outline-none focus:ring-2 focus:ring-zinc-400/45 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:text-white dark:focus:ring-zinc-200/30"
+      >
+        <span class="relative h-5 w-5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="absolute inset-0 h-5 w-5 origin-center transition-all duration-300 dark:-rotate-90 dark:scale-0 dark:opacity-0">
+            <circle cx="12" cy="12" r="4.25"></circle>
+            <path d="M12 2.75v2.5"></path>
+            <path d="M12 18.75v2.5"></path>
+            <path d="m4.93 4.93 1.77 1.77"></path>
+            <path d="m17.3 17.3 1.77 1.77"></path>
+            <path d="M2.75 12h2.5"></path>
+            <path d="M18.75 12h2.5"></path>
+            <path d="m4.93 19.07 1.77-1.77"></path>
+            <path d="m17.3 6.7 1.77-1.77"></path>
+          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" class="absolute inset-0 h-5 w-5 origin-center scale-0 rotate-90 opacity-0 transition-all duration-300 dark:rotate-0 dark:scale-100 dark:opacity-100">
+            <path d="M19.2 15.1c-0.94 0.31-1.95 0.48-3 0.48-5.26 0-9.53-4.27-9.53-9.53 0-1.05 0.17-2.07 0.48-3A9.73 9.73 0 0 0 3.2 12c0 5.41 4.39 9.8 9.8 9.8 3.55 0 6.65-1.89 8.36-4.7-0.73-0.03-1.46-0.12-2.16-0.29z"></path>
+          </svg>
+        </span>
+      </button>';
+}
+
+function render_brand_controls(bool $compact = false, bool $alignRight = false): string
+{
+    $brand = $compact ? render_auth_mark() : render_brand(false);
+    $toggle = render_theme_toggle_button();
+    $content = $alignRight ? $toggle . $brand : $brand . $toggle;
+
+    return '<div class="inline-flex items-center gap-3">' . $content . '</div>';
 }
 
 function render_auth_field(
@@ -49,18 +87,18 @@ function render_auth_field(
     bool $required = true
 ): string {
     $requiredAttribute = $required ? ' required' : '';
-    $hintMarkup = $hint === null ? '' : '<p class="pt-2 text-xs leading-5 text-muted-foreground">' . escape_html($hint) . '</p>';
+    $hintMarkup = $hint === null ? '' : '<p class="pt-2 text-xs leading-5 text-muted-foreground transition-colors duration-300 dark:text-zinc-300">' . escape_html($hint) . '</p>';
 
     return '
       <div class="space-y-2.5">
-        <label class="block text-[13px] font-semibold text-foreground" for="' . escape_html($name) . '">' . escape_html($label) . '</label>
+        <label class="block text-[13px] font-semibold text-foreground transition-colors duration-300 dark:text-zinc-100" for="' . escape_html($name) . '">' . escape_html($label) . '</label>
         <input
           id="' . escape_html($name) . '"
           name="' . escape_html($name) . '"
           type="' . escape_html($type) . '"
           autocomplete="' . escape_html($autocomplete) . '"
           placeholder="' . escape_html($placeholder) . '"
-          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-950 focus:ring-2 focus:ring-zinc-500/45"' . $requiredAttribute . '
+          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none transition duration-300 placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-950 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-100 dark:focus:ring-zinc-200/25"' . $requiredAttribute . '
         >' . $hintMarkup . '
       </div>';
 }
@@ -93,10 +131,10 @@ function render_auth_form_card(string $mode, ?array $flash): string
         : '';
 
     return '
-      <div class="w-full max-w-sm">
+      <div class="w-full max-w-sm text-foreground transition-colors duration-300 dark:text-zinc-100">
         <div class="space-y-1 text-left">
-          <h1 class="text-[2rem] font-semibold tracking-[-0.035em] text-zinc-950">' . escape_html($title) . '</h1>
-          <p class="text-sm text-muted-foreground">' . escape_html($description) . '</p>
+          <h1 class="text-[2rem] font-semibold tracking-[-0.035em] text-foreground transition-colors duration-300 dark:text-white">' . escape_html($title) . '</h1>
+          <p class="text-sm text-muted-foreground transition-colors duration-300 dark:text-zinc-200">' . escape_html($description) . '</p>
         </div>
         <div class="' . $topMarginClass . '">' . render_flash($flash) . '</div>
         <form class="mt-8 space-y-6" method="post" action="' . escape_html($action) . '" autocomplete="off">
@@ -118,13 +156,13 @@ function render_auth_form_card(string $mode, ?array $flash): string
           ) . '
           ' . $confirmField . '
           <button
-            class="inline-flex h-10 w-full items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-300"
+            class="inline-flex h-10 w-full items-center justify-center rounded-md bg-zinc-900 px-4 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200 dark:focus:ring-zinc-400/30"
             type="submit"
           >' . escape_html($submitLabel) . '</button>
         </form>
-        <p class="mt-4 text-center text-sm text-muted-foreground">
+        <p class="mt-4 text-center text-sm text-muted-foreground transition-colors duration-300 dark:text-zinc-300">
           ' . escape_html($switchLabel) . '
-          <a class="font-medium text-foreground underline underline-offset-4" href="' . escape_html($switchHref) . '">' . escape_html($switchAction) . '</a>
+          <a class="font-medium text-foreground underline underline-offset-4 transition-colors duration-300 dark:text-white" href="' . escape_html($switchHref) . '">' . escape_html($switchAction) . '</a>
         </p>
       </div>';
 }
@@ -137,6 +175,7 @@ function render_layout(string $title, string $content): string
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>' . escape_html($title) . '</title>
+    <script src="/theme.js"></script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
     <script src="/vendor/matrix-animation.js" defer></script>
@@ -144,16 +183,11 @@ function render_layout(string $title, string $content): string
     <script src="/matrix-rain.js" defer></script>
     <script src="/page-shell.js" defer></script>
   </head>
-  <body class="min-h-screen bg-white text-foreground">
-    <div class="relative min-h-screen overflow-hidden bg-white">
+  <body class="min-h-screen bg-white text-foreground transition-colors duration-300 dark:bg-zinc-950">
+    <div class="relative min-h-screen overflow-hidden bg-white transition-colors duration-300 dark:bg-zinc-950">
       <div
         class="pointer-events-none fixed inset-0"
         data-matrix-rain
-        data-rain-background="#ffffff"
-        data-rain-fade-color="rgba(255,255,255,0.03)"
-        data-rain-erase-color="#ffffff"
-        data-rain-color="rgba(24,24,27,0.74)"
-        data-rain-head-color="rgba(9,9,11,0.88)"
       ></div>
       <main id="page-shell-content" class="relative z-10 min-h-screen">
       ' . $content . '
@@ -168,18 +202,18 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
     $mode = in_array($mode, ['register', 'login'], true) ? $mode : 'register';
     $isRegister = $mode === 'register';
     $registerPanel = '
-      <div data-auth-panel="register" data-page-surface="auth-panel" class="' . ($isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 md:p-8">
+      <div data-auth-panel="register" data-page-surface="auth-panel" class="' . ($isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 transition-colors duration-300 dark:bg-zinc-950 md:p-8">
         <div class="absolute left-7 top-7 flex items-center justify-start md:left-8 md:top-8">
-          ' . render_auth_mark() . '
+          ' . render_brand_controls(true, false) . '
         </div>
         <div class="flex min-h-svh items-center justify-center py-20">
           ' . render_auth_form_card('register', $isRegister ? $flash : null) . '
         </div>
       </div>';
     $loginPanel = '
-      <div data-auth-panel="login" data-page-surface="auth-panel" class="' . (!$isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 md:p-8">
+      <div data-auth-panel="login" data-page-surface="auth-panel" class="' . (!$isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 transition-colors duration-300 dark:bg-zinc-950 md:p-8">
         <div class="absolute right-7 top-7 flex items-center justify-end md:right-8 md:top-8">
-          ' . render_auth_mark() . '
+          ' . render_brand_controls(true, true) . '
         </div>
         <div class="flex min-h-svh items-center justify-center py-20">
           ' . render_auth_form_card('login', !$isRegister ? $flash : null) . '
@@ -199,17 +233,17 @@ function render_welcome_page(string $username): string
 {
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div data-page-surface="result-card" class="w-full max-w-2xl rounded-[2rem] bg-white/[0.99] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg md:p-10">
+        <div data-page-surface="result-card" class="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white/[0.96] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg transition-colors duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
           <div class="flex items-start justify-between gap-6">
             <div class="space-y-6">
               <div class="flex items-center justify-start">
-                ' . render_brand(false) . '
+                ' . render_brand_controls(false, false) . '
               </div>
-              <h1 class="text-4xl font-semibold tracking-tight text-zinc-950">Welcome, ' . escape_html($username) . '!</h1>
+              <h1 class="text-4xl font-semibold tracking-tight text-foreground transition-colors duration-300 dark:text-white">Welcome, ' . escape_html($username) . '!</h1>
             </div>
             <form method="post" action="/logout.php" class="shrink-0 pt-1">
               <input type="hidden" name="csrf_token" value="' . escape_html(csrf_token()) . '">
-              <button class="inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium text-rose-500 transition hover:bg-rose-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-rose-300" type="submit">Logout</button>
+              <button class="inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium text-rose-500 transition duration-300 hover:bg-rose-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-rose-300 dark:text-rose-300 dark:hover:bg-rose-500 dark:hover:text-white dark:focus:ring-rose-400/35" type="submit">Logout</button>
             </form>
           </div>
         </div>
@@ -222,16 +256,19 @@ function render_not_registered_page(): string
 {
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div data-page-surface="result-card" class="w-full max-w-xl rounded-[2rem] bg-white/[0.99] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg md:p-10">
-          <div class="space-y-4">
-            <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">You are not registered yet</h1>
-            <p class="text-sm leading-6 text-muted-foreground">
+        <div data-page-surface="result-card" class="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white/[0.96] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg transition-colors duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
+          <div class="flex items-center justify-start">
+            ' . render_brand_controls(false, false) . '
+          </div>
+          <div class="mt-8 space-y-4">
+            <h1 class="text-3xl font-semibold tracking-tight text-foreground transition-colors duration-300 md:text-4xl">You are not registered yet</h1>
+            <p class="text-sm leading-6 text-muted-foreground transition-colors duration-300">
               <span class="block">The username or password is incorrect.</span>
               <span class="block">Try logging in again or create a new account.</span>
             </p>
           </div>
           <div class="mt-8">
-            <a class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white transition hover:bg-zinc-800" href="/?mode=register">Back to form</a>
+            <a class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200" href="/?mode=register">Back to form</a>
           </div>
         </div>
       </section>';
@@ -243,11 +280,14 @@ function render_error_page(string $title, string $description): string
 {
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div class="w-full max-w-xl rounded-[2rem] bg-white/[0.99] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg md:p-10">
-          <p class="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Access denied</p>
-          <h1 class="mt-4 text-3xl font-semibold tracking-tight">' . escape_html($title) . '</h1>
-          <p class="mt-3 text-sm leading-7 text-muted-foreground">' . escape_html($description) . '</p>
-          <a class="mt-8 inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white transition hover:bg-zinc-800" href="/">Back</a>
+        <div class="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white/[0.96] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg transition-colors duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
+          <div class="flex items-center justify-start">
+            ' . render_brand_controls(false, false) . '
+          </div>
+          <p class="mt-8 text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground transition-colors duration-300">Access denied</p>
+          <h1 class="mt-4 text-3xl font-semibold tracking-tight text-foreground transition-colors duration-300">' . escape_html($title) . '</h1>
+          <p class="mt-3 text-sm leading-7 text-muted-foreground transition-colors duration-300">' . escape_html($description) . '</p>
+          <a class="mt-8 inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white transition duration-300 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200" href="/">Back</a>
         </div>
       </section>';
 
