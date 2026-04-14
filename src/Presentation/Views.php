@@ -248,7 +248,7 @@ function render_welcome_page(string $username): string
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
         <div data-page-surface="result-card" class="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white/[0.96] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
-          <div class="flex min-h-[22rem] flex-col">
+          <div class="flex flex-col">
             <div class="flex items-start justify-between gap-6">
               <div class="flex items-center justify-start">
                 ' . render_brand_controls(false, false, false, false) . '
@@ -260,9 +260,9 @@ function render_welcome_page(string $username): string
             <div class="mt-8">
               <h1 class="text-4xl font-semibold tracking-tight text-foreground dark:text-white">Welcome, ' . escape_html($username) . '!</h1>
             </div>
-            <form method="post" action="/logout.php" class="mt-auto pt-8">
+            <form method="post" action="/logout.php" class="mt-10">
               <input type="hidden" name="csrf_token" value="' . escape_html(csrf_token()) . '">
-              <button class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200 dark:focus:ring-zinc-400/30" type="submit">Logout</button>
+              <button class="inline-flex h-11 items-center justify-center rounded-xl border border-rose-200/80 bg-rose-50 px-5 text-sm font-medium text-rose-700 hover:bg-rose-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-rose-300 dark:border-rose-500/35 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500 dark:hover:text-white dark:focus:ring-rose-400/35" type="submit">Logout</button>
             </form>
           </div>
         </div>
