@@ -7,8 +7,6 @@
   }
 
   let navigationToken = 0
-  const sharedSurfaceEasing = "cubic-bezier(0.22, 1, 0.36, 1)"
-  const sharedSurfaceDuration = 420
 
   function prefersReducedMotion() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -62,138 +60,9 @@
     return panel instanceof HTMLElement ? panel : null
   }
 
-  function getSharedSurface(root) {
-    if (!root || typeof root.querySelector !== "function") {
-      return null
-    }
-
-    const surface = root.querySelector("[data-shell-surface]")
-    return surface instanceof HTMLElement ? surface : null
-  }
-
-  function captureSurfaceSnapshot(surface) {
-    if (!(surface instanceof HTMLElement)) {
-      return null
-    }
-
-    const rect = surface.getBoundingClientRect()
-    if (rect.width < 1 || rect.height < 1) {
-      return null
-    }
-
-    const computed = window.getComputedStyle(surface)
-    const backgroundColor =
-      computed.backgroundColor && computed.backgroundColor !== "rgba(0, 0, 0, 0)"
-        ? computed.backgroundColor
-        : "rgb(255, 255, 255)"
-
-    return {
-      backgroundColor,
-      backdropFilter: computed.backdropFilter,
-      borderRadius: computed.borderRadius,
-      boxShadow: computed.boxShadow === "none" ? "0 0 0 rgba(0, 0, 0, 0)" : computed.boxShadow,
-      rect,
-      webkitBackdropFilter: computed.webkitBackdropFilter,
-    }
-  }
-
-  function createSurfaceGhost(snapshot) {
-    const ghost = document.createElement("div")
-    ghost.setAttribute("aria-hidden", "true")
-    ghost.style.position = "fixed"
-    ghost.style.left = `${snapshot.rect.left}px`
-    ghost.style.top = `${snapshot.rect.top}px`
-    ghost.style.width = `${snapshot.rect.width}px`
-    ghost.style.height = `${snapshot.rect.height}px`
-    ghost.style.borderRadius = snapshot.borderRadius
-    ghost.style.backgroundColor = snapshot.backgroundColor
-    ghost.style.boxShadow = snapshot.boxShadow
-    ghost.style.backdropFilter = snapshot.backdropFilter
-    ghost.style.webkitBackdropFilter = snapshot.webkitBackdropFilter
-    ghost.style.pointerEvents = "none"
-    ghost.style.margin = "0"
-    ghost.style.zIndex = "40"
-    return ghost
-  }
-
-  async function animateSharedSurface(previousSurfaceSnapshot) {
-    const incomingSurface = getSharedSurface(shellContent)
-    if (!previousSurfaceSnapshot || !incomingSurface || prefersReducedMotion()) {
-      return
-    }
-
-    const incomingSnapshot = captureSurfaceSnapshot(incomingSurface)
-    if (!incomingSnapshot) {
-      return
-    }
-
-    const deltaX = Math.abs(previousSurfaceSnapshot.rect.left - incomingSnapshot.rect.left)
-    const deltaY = Math.abs(previousSurfaceSnapshot.rect.top - incomingSnapshot.rect.top)
-    const deltaWidth = Math.abs(previousSurfaceSnapshot.rect.width - incomingSnapshot.rect.width)
-    const deltaHeight = Math.abs(previousSurfaceSnapshot.rect.height - incomingSnapshot.rect.height)
-
-    if (deltaX < 1 && deltaY < 1 && deltaWidth < 1 && deltaHeight < 1) {
-      return
-    }
-
-    const ghost = createSurfaceGhost(previousSurfaceSnapshot)
-    document.body.appendChild(ghost)
-
-    incomingSurface.style.opacity = "0.28"
-    incomingSurface.style.willChange = "opacity"
-
-    const ghostAnimation = ghost.animate(
-      [
-        {
-          backgroundColor: previousSurfaceSnapshot.backgroundColor,
-          borderRadius: previousSurfaceSnapshot.borderRadius,
-          boxShadow: previousSurfaceSnapshot.boxShadow,
-          height: `${previousSurfaceSnapshot.rect.height}px`,
-          left: `${previousSurfaceSnapshot.rect.left}px`,
-          top: `${previousSurfaceSnapshot.rect.top}px`,
-          width: `${previousSurfaceSnapshot.rect.width}px`,
-        },
-        {
-          backgroundColor: incomingSnapshot.backgroundColor,
-          borderRadius: incomingSnapshot.borderRadius,
-          boxShadow: incomingSnapshot.boxShadow,
-          height: `${incomingSnapshot.rect.height}px`,
-          left: `${incomingSnapshot.rect.left}px`,
-          top: `${incomingSnapshot.rect.top}px`,
-          width: `${incomingSnapshot.rect.width}px`,
-        },
-      ],
-      {
-        duration: sharedSurfaceDuration,
-        easing: sharedSurfaceEasing,
-        fill: "forwards",
-      }
-    )
-
-    const revealAnimation = motionApi.animate(
-      incomingSurface,
-      {
-        opacity: [0, 1],
-      },
-      {
-        delay: 0.04,
-        duration: 0.18,
-        easing: "ease-out",
-      }
-    )
-
-    try {
-      await Promise.allSettled([ghostAnimation.finished, revealAnimation.finished])
-    } finally {
-      ghost.remove()
-      incomingSurface.style.opacity = ""
-      incomingSurface.style.willChange = ""
-    }
-  }
-
   async function animateAuthSwitch(previousPanelRect) {
     const incomingPanel = getAuthPanel(shellContent)
-    if (!incomingPanel || !previousPanelRect) {
+    if (!incomingPanel || !previousPanelRect || prefersReducedMotion()) {
       return
     }
 
@@ -239,7 +108,6 @@
     const currentAuthMode = getAuthMode(window.location.href)
     const previousAuthPanel = currentAuthMode ? getAuthPanel(shellContent) : null
     const previousPanelRect = previousAuthPanel?.getBoundingClientRect() ?? null
-    const previousSurfaceSnapshot = captureSurfaceSnapshot(getSharedSurface(shellContent))
 
     const requestInit = {
       credentials: "same-origin",
@@ -298,13 +166,6 @@
         shellContent.style.pointerEvents = "none"
         try {
           await animateAuthSwitch(previousPanelRect)
-        } finally {
-          shellContent.style.pointerEvents = ""
-        }
-      } else if (previousSurfaceSnapshot) {
-        shellContent.style.pointerEvents = "none"
-        try {
-          await animateSharedSurface(previousSurfaceSnapshot)
         } finally {
           shellContent.style.pointerEvents = ""
         }
