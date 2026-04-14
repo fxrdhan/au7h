@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    environment:
+      PUBLIC_HTTPS_PORT: 8443
+    volumes:
+      - ./config:/var/www/html/config
+      - ./public:/var/www/html/public
+      - ./src:/var/www/html/src
+      - au7h-data:/var/www/data
+      - au7h-certs:/var/www/certs
+      - au7h-mysql:/var/lib/mysql
+
+volumes:
+  au7h-data:
+  au7h-certs:
+  au7h-mysql:

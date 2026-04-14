@@ -4,6 +4,12 @@
   "description": "Dev tooling for the PHP-based Au7h secure auth app.",
   "private": true,
   "scripts": {
+    "dev": "docker compose -f compose.dev.yaml up -d --build && npm run dev:css",
+    "dev:up": "docker compose -f compose.dev.yaml up -d --build",
+    "dev:rebuild": "docker compose -f compose.dev.yaml up -d --build --force-recreate",
+    "dev:stop": "docker compose -f compose.dev.yaml down",
+    "dev:logs": "docker compose -f compose.dev.yaml logs -f app",
+    "dev:css": "tailwindcss -i ./resources/tailwind.css -o ./public/styles.css --watch",
     "build:css": "tailwindcss -i ./resources/tailwind.css -o ./public/styles.css --minify",
     "commitlint": "commitlint --config commitlint.config.cjs"
   },

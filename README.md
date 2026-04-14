@@ -55,6 +55,54 @@ Catatan:
 - Sertifikat TLS self-signed dibuat otomatis saat container pertama kali dijalankan.
 - Jika port HTTPS pada host diubah, atur `PUBLIC_HTTPS_PORT` agar pengalihan tetap sesuai.
 
+## Mode Pengembangan
+
+Workflow dev sekarang memakai `docker compose` dengan bind mount untuk `config/`, `public/`, dan `src/`, jadi perubahan file PHP, JS, dan aset statis langsung terbaca oleh container tanpa rebuild image setiap kali.
+
+Setup awal:
+
+```bash
+npm install
+npm run build:css
+```
+
+Jalankan stack pengembangan:
+
+```bash
+npm run dev:up
+```
+
+Jalankan watcher Tailwind di terminal lain:
+
+```bash
+npm run dev:css
+```
+
+Atau pakai satu perintah berikut untuk menyalakan container lalu langsung masuk ke mode watch CSS:
+
+```bash
+npm run dev
+```
+
+Selama mode pengembangan aktif:
+
+- Ubah file di `src/`, `config/`, atau `public/`, lalu cukup refresh browser.
+- Ubah file Tailwind di `resources/tailwind.css`, watcher akan memperbarui `public/styles.css`, lalu refresh browser.
+- Lihat log container dengan `npm run dev:logs`.
+- Hentikan stack dengan `npm run dev:stop`.
+
+Kapan masih perlu rebuild container:
+
+- Saat mengubah `Dockerfile`
+- Saat mengubah file di folder `docker/`
+- Saat mengubah `docker-entrypoint.sh`
+
+Untuk kasus di atas, jalankan:
+
+```bash
+npm run dev:rebuild
+```
+
 Contoh:
 
 ```bash
