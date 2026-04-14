@@ -105,6 +105,8 @@
   function sanitizeSurfaceClone(clone) {
     clone.removeAttribute("id")
     clone.setAttribute("aria-hidden", "true")
+    // Morph the container silhouette only so old text doesn't ghost while scaling.
+    clone.replaceChildren()
 
     for (const element of clone.querySelectorAll("[id]")) {
       element.removeAttribute("id")
