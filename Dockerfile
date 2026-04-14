@@ -27,9 +27,7 @@ ENV APP_PORT_HTTP=8080 \
     MYSQL_DATA_DIR=/var/lib/mysql \
     MYSQL_DATABASE=au7h_auth \
     MYSQL_APP_USER=au7h_app \
-    MYSQL_PORT=3306 \
-    TLS_CERT_PATH=/var/www/certs/server.crt \
-    TLS_KEY_PATH=/var/www/certs/server.key
+    MYSQL_PORT=3306
 
 COPY docker/php.ini /etc/php/8.4/apache2/conf.d/90-au7h-security.ini
 COPY docker/apache-global.conf /etc/apache2/conf-available/zzz-au7h-global.conf
