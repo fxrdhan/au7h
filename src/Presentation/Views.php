@@ -23,7 +23,7 @@ function render_brand(bool $inverse = false, bool $showText = true): string
     $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
     $iconClass = $inverse ? 'invert' : 'dark:invert';
     $label = $showText
-        ? '<span class="block translate-y-[4px] font-extrabold leading-none">Au7h</span>'
+        ? '<span class="block translate-y-[4px] text-2xl font-extrabold leading-none">Au7h</span>'
         : '';
     $gapClass = $showText ? 'gap-3' : '';
 
@@ -39,7 +39,7 @@ function render_auth_mark(): string
     return '
       <a href="/?mode=register" class="inline-flex items-end gap-2 text-sm font-semibold tracking-tight text-foreground dark:text-white">
         <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 translate-y-[2px] dark:invert">
-        <span class="block translate-y-[2px] font-extrabold leading-none">Au7h</span>
+        <span class="block translate-y-[2px] text-xl font-extrabold leading-none">Au7h</span>
       </a>';
 }
 
@@ -106,7 +106,7 @@ function render_auth_field(
           type="' . escape_html($type) . '"
           autocomplete="' . escape_html($autocomplete) . '"
           placeholder="' . escape_html($placeholder) . '"
-          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-950 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-100 dark:focus:ring-zinc-200/25"' . $requiredAttribute . '
+          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-950 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-100 dark:focus:ring-zinc-100/45"' . $requiredAttribute . '
         >' . $hintMarkup . '
       </div>';
 }
