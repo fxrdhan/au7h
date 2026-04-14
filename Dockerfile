@@ -35,8 +35,9 @@ COPY docker/php.ini /etc/php/8.4/apache2/conf.d/90-au7h-security.ini
 COPY docker/apache-global.conf /etc/apache2/conf-available/zzz-au7h-global.conf
 COPY docker/apache-http.conf.template /etc/apache2/sites-available/http-redirect.conf.template
 COPY docker/apache-ssl.conf.template /etc/apache2/sites-available/app-ssl.conf.template
-COPY app /var/www/html/app
+COPY config /var/www/html/config
 COPY public /var/www/html/public
+COPY src /var/www/html/src
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint-custom.sh
 
 RUN mkdir -p /var/www/data /var/www/certs /var/run/mysqld /var/lib/mysql \

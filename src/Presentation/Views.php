@@ -18,21 +18,13 @@ function render_flash(?array $flash): string
         . '</div>';
 }
 
-function render_logo_badge(string $sizeClass): string
-{
-    return '
-      <span class="inline-flex ' . $sizeClass . ' items-center justify-center overflow-hidden rounded-xl border border-zinc-300 bg-white shadow-soft">
-        <img src="/a-logo.svg" alt="" aria-hidden="true" style="width:100%;height:100%;object-fit:contain;">
-      </span>';
-}
-
 function render_brand(bool $inverse = false): string
 {
     $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
 
     return '
       <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight ' . $textClass . '">
-        ' . render_logo_badge('h-9 w-9') . '
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-300 bg-white text-[0.78rem] font-semibold text-zinc-950 shadow-soft">A</span>
         <span>Au7h</span>
       </a>';
 }
@@ -41,7 +33,7 @@ function render_auth_mark(): string
 {
     return '
       <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
-        ' . render_logo_badge('h-5 w-5') . '
+        <span class="inline-flex h-5 w-5 items-center justify-center rounded-md border border-zinc-300 bg-white text-[0.6rem] font-semibold text-zinc-950 shadow-sm">A</span>
         <span>Au7h</span>
       </a>';
 }
@@ -144,7 +136,7 @@ function render_layout(string $title, string $content): string
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>' . escape_html($title) . '</title>
-    <link rel="icon" href="/a-logo.svg" type="image/svg+xml">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
     <script src="/vendor/matrix-animation.js" defer></script>
     <script src="/vendor/motion.js" defer></script>
