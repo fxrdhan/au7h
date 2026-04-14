@@ -106,7 +106,7 @@ function render_auth_field(
           type="' . escape_html($type) . '"
           autocomplete="' . escape_html($autocomplete) . '"
           placeholder="' . escape_html($placeholder) . '"
-          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-950 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-100 dark:focus:ring-zinc-100/45"' . $requiredAttribute . '
+          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-none placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-200 dark:focus:ring-zinc-100/45"' . $requiredAttribute . '
         >' . $hintMarkup . '
       </div>';
 }
@@ -191,13 +191,13 @@ function render_layout(string $title, string $content): string
     <script src="/matrix-rain.js" defer></script>
     <script src="/page-shell.js" defer></script>
   </head>
-  <body class="min-h-screen bg-white text-foreground dark:bg-zinc-950">
-    <div class="relative min-h-screen overflow-hidden bg-white dark:bg-zinc-950">
+  <body class="min-h-svh bg-white text-foreground dark:bg-zinc-950">
+    <div class="relative min-h-svh overflow-hidden bg-white dark:bg-zinc-950">
       <div
         class="pointer-events-none fixed inset-0"
         data-matrix-rain
       ></div>
-      <main id="page-shell-content" class="relative z-10 min-h-screen">
+      <main id="page-shell-content" class="relative z-10 min-h-svh">
       ' . $content . '
       </main>
     </div>
@@ -230,26 +230,26 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
     $mode = in_array($mode, ['register', 'login'], true) ? $mode : 'register';
     $isRegister = $mode === 'register';
     $registerPanel = '
-      <div data-auth-panel="register" data-page-surface="auth-panel" class="' . ($isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 dark:bg-zinc-950 md:p-8">
+      <div data-auth-panel="register" data-page-surface="auth-panel" class="' . ($isRegister ? 'block' : 'hidden lg:block') . ' relative flex min-h-svh flex-col bg-white p-7 dark:bg-zinc-950 md:p-8">
         <div class="absolute left-7 top-7 flex items-center justify-start md:left-8 md:top-8">
           ' . render_brand_controls(true, false, false) . '
         </div>
         <div class="absolute right-7 top-7 flex items-center justify-end md:right-8 md:top-8">
           ' . render_theme_toggle_button() . '
         </div>
-        <div class="flex min-h-svh items-center justify-center py-20">
+        <div class="flex flex-1 items-center justify-center py-20">
           ' . render_auth_form_card('register', $isRegister ? $flash : null) . '
         </div>
       </div>';
     $loginPanel = '
-      <div data-auth-panel="login" data-page-surface="auth-panel" class="' . (!$isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 dark:bg-zinc-950 md:p-8">
+      <div data-auth-panel="login" data-page-surface="auth-panel" class="' . (!$isRegister ? 'block' : 'hidden lg:block') . ' relative flex min-h-svh flex-col bg-white p-7 dark:bg-zinc-950 md:p-8">
         <div class="absolute left-7 top-7 flex items-center justify-start md:left-8 md:top-8">
           ' . render_theme_toggle_button() . '
         </div>
         <div class="absolute right-7 top-7 flex items-center justify-end md:right-8 md:top-8">
           ' . render_brand_controls(true, true, false) . '
         </div>
-        <div class="flex min-h-svh items-center justify-center py-20">
+        <div class="flex flex-1 items-center justify-center py-20">
           ' . render_auth_form_card('login', !$isRegister ? $flash : null) . '
         </div>
       </div>';
