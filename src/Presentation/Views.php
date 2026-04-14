@@ -18,24 +18,28 @@ function render_flash(?array $flash): string
         . '</div>';
 }
 
-function render_brand(bool $inverse = false): string
+function render_brand(bool $inverse = false, bool $showText = true): string
 {
     $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
     $iconClass = $inverse ? 'invert' : 'dark:invert';
+    $label = $showText
+        ? '<span class="block translate-y-[4px] font-extrabold leading-none">Au7h</span>'
+        : '';
+    $gapClass = $showText ? 'gap-3' : '';
 
     return '
-      <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight ' . $textClass . '">
-        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 ' . $iconClass . '">
-        <span class="font-extrabold">Au7h</span>
+      <a href="/" class="inline-flex items-end ' . $gapClass . ' text-sm font-semibold tracking-tight ' . $textClass . '">
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 translate-y-[3px] ' . $iconClass . '">
+        ' . $label . '
       </a>';
 }
 
 function render_auth_mark(): string
 {
     return '
-      <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground dark:text-white">
-        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 dark:invert">
-        <span class="font-extrabold">Au7h</span>
+      <a href="/?mode=register" class="inline-flex items-end gap-2 text-sm font-semibold tracking-tight text-foreground dark:text-white">
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 translate-y-[2px] dark:invert">
+        <span class="block translate-y-[2px] font-extrabold leading-none">Au7h</span>
       </a>';
 }
 
@@ -68,9 +72,13 @@ function render_theme_toggle_button(): string
       </button>';
 }
 
-function render_brand_controls(bool $compact = false, bool $alignRight = false): string
+function render_brand_controls(bool $compact = false, bool $alignRight = false, bool $showToggle = true, bool $showText = true): string
 {
-    $brand = $compact ? render_auth_mark() : render_brand(false);
+    $brand = $compact ? render_auth_mark() : render_brand(false, $showText);
+    if (!$showToggle) {
+        return '<div class="inline-flex items-center gap-3">' . $brand . '</div>';
+    }
+
     $toggle = render_theme_toggle_button();
     $content = $alignRight ? $toggle . $brand : $brand . $toggle;
 
@@ -204,7 +212,10 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
     $registerPanel = '
       <div data-auth-panel="register" data-page-surface="auth-panel" class="' . ($isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 dark:bg-zinc-950 md:p-8">
         <div class="absolute left-7 top-7 flex items-center justify-start md:left-8 md:top-8">
-          ' . render_brand_controls(true, false) . '
+          ' . render_brand_controls(true, false, false) . '
+        </div>
+        <div class="absolute right-7 top-7 flex items-center justify-end md:right-8 md:top-8">
+          ' . render_theme_toggle_button() . '
         </div>
         <div class="flex min-h-svh items-center justify-center py-20">
           ' . render_auth_form_card('register', $isRegister ? $flash : null) . '
@@ -212,8 +223,11 @@ function render_auth_page(?array $flash, string $mode = 'register'): string
       </div>';
     $loginPanel = '
       <div data-auth-panel="login" data-page-surface="auth-panel" class="' . (!$isRegister ? 'block' : 'hidden lg:block') . ' relative min-h-svh bg-white p-7 dark:bg-zinc-950 md:p-8">
+        <div class="absolute left-7 top-7 flex items-center justify-start md:left-8 md:top-8">
+          ' . render_theme_toggle_button() . '
+        </div>
         <div class="absolute right-7 top-7 flex items-center justify-end md:right-8 md:top-8">
-          ' . render_brand_controls(true, true) . '
+          ' . render_brand_controls(true, true, false) . '
         </div>
         <div class="flex min-h-svh items-center justify-center py-20">
           ' . render_auth_form_card('login', !$isRegister ? $flash : null) . '
@@ -234,16 +248,21 @@ function render_welcome_page(string $username): string
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
         <div data-page-surface="result-card" class="w-full max-w-2xl rounded-[2rem] border border-white/70 bg-white/[0.96] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
-          <div class="flex items-start justify-between gap-6">
-            <div class="space-y-6">
+          <div class="flex min-h-[22rem] flex-col">
+            <div class="flex items-start justify-between gap-6">
               <div class="flex items-center justify-start">
-                ' . render_brand_controls(false, false) . '
+                ' . render_brand_controls(false, false, false, false) . '
               </div>
+              <div class="shrink-0">
+                ' . render_theme_toggle_button() . '
+              </div>
+            </div>
+            <div class="mt-8">
               <h1 class="text-4xl font-semibold tracking-tight text-foreground dark:text-white">Welcome, ' . escape_html($username) . '!</h1>
             </div>
-            <form method="post" action="/logout.php" class="shrink-0 pt-1">
+            <form method="post" action="/logout.php" class="mt-auto pt-8">
               <input type="hidden" name="csrf_token" value="' . escape_html(csrf_token()) . '">
-              <button class="inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium text-rose-500 hover:bg-rose-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-rose-300 dark:text-rose-300 dark:hover:bg-rose-500 dark:hover:text-white dark:focus:ring-rose-400/35" type="submit">Logout</button>
+              <button class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200 dark:focus:ring-zinc-400/30" type="submit">Logout</button>
             </form>
           </div>
         </div>
@@ -257,8 +276,13 @@ function render_not_registered_page(): string
     $content = '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
         <div data-page-surface="result-card" class="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white/[0.96] p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
-          <div class="flex items-center justify-start">
-            ' . render_brand_controls(false, false) . '
+          <div class="flex items-start justify-between gap-6">
+            <div class="flex items-center justify-start">
+              ' . render_brand_controls(false, false, false, false) . '
+            </div>
+            <div class="shrink-0">
+              ' . render_theme_toggle_button() . '
+            </div>
           </div>
           <div class="mt-8 space-y-4">
             <h1 class="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">You are not registered yet</h1>
