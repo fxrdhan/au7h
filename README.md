@@ -56,8 +56,8 @@ bun run dev
 
 Akses aplikasi di:
 
-- `http://localhost:8080`
-- `https://localhost:8443`
+- `http://localhost:10080`
+- `https://localhost:10443`
 
 Script tambahan:
 
@@ -69,6 +69,14 @@ Script tambahan:
 - `bun run dev:stop`
 
 Perubahan di `src/`, `config/`, dan `public/` cukup di-refresh di browser. Perubahan di `resources/tailwind.css` akan memperbarui `public/styles.css`.
+
+Port dev default sengaja memakai `10080` dan `10443` agar tidak bentrok dengan service lokal lain. Kalau ingin ganti:
+
+```bash
+HOST_HTTP_PORT=11080 HOST_HTTPS_PORT=11443 bun run dev
+```
+
+Sertifikat dev dibaca dari folder `certs/` di host. Jika ingin browser benar-benar menganggap `https://localhost:10443` aman, isi `certs/server.crt` dan `certs/server.key` dengan sertifikat `localhost` dari `mkcert`. Jika file itu belum ada, container akan membuat self-signed cert biasa dan browser akan tetap memberi peringatan.
 
 ## Production
 
@@ -86,7 +94,7 @@ docker run --name au7h \
 Catatan:
 
 - HTTP akan diarahkan ke HTTPS
-- sertifikat self-signed dibuat otomatis
+- jika `certs/server.crt` dan `certs/server.key` tidak tersedia, sertifikat self-signed dibuat otomatis
 - jika port HTTPS host diubah, sesuaikan `PUBLIC_HTTPS_PORT`
 
 ## Security

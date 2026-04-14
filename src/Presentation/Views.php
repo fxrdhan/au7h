@@ -21,10 +21,11 @@ function render_flash(?array $flash): string
 function render_brand(bool $inverse = false): string
 {
     $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
+    $iconStyle = $inverse ? ' style="filter: invert(1);"' : '';
 
     return '
       <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight ' . $textClass . '">
-        <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-300 bg-white text-[0.78rem] font-semibold text-zinc-950 shadow-soft">A</span>
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0"' . $iconStyle . '>
         <span>Au7h</span>
       </a>';
 }
@@ -33,7 +34,7 @@ function render_auth_mark(): string
 {
     return '
       <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground">
-        <span class="inline-flex h-5 w-5 items-center justify-center rounded-md border border-zinc-300 bg-white text-[0.6rem] font-semibold text-zinc-950 shadow-sm">A</span>
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0">
         <span>Au7h</span>
       </a>';
 }
