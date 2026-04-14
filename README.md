@@ -57,64 +57,24 @@ Catatan:
 
 ## Mode Pengembangan
 
-Workflow dev sekarang memakai `docker compose` dengan bind mount untuk `config/`, `public/`, dan `src/`, jadi perubahan file PHP, JS, dan aset statis langsung terbaca oleh container tanpa rebuild image setiap kali.
-
-Setup awal:
+Pakai `docker compose` untuk container, lalu jalankan Tailwind watcher di terminal lain.
 
 ```bash
 npm install
 npm run build:css
-```
-
-Jalankan stack pengembangan:
-
-```bash
 npm run dev:up
-```
-
-Jalankan watcher Tailwind di terminal lain:
-
-```bash
 npm run dev:css
 ```
 
-Atau pakai satu perintah berikut untuk menyalakan container lalu langsung masuk ke mode watch CSS:
+Atau jalankan keduanya sekaligus:
 
 ```bash
 npm run dev
 ```
 
-Selama mode pengembangan aktif:
+Perubahan di `src/`, `config/`, dan `public/` cukup di-refresh di browser. Perubahan di `resources/tailwind.css` akan memperbarui `public/styles.css`.
 
-- Ubah file di `src/`, `config/`, atau `public/`, lalu cukup refresh browser.
-- Ubah file Tailwind di `resources/tailwind.css`, watcher akan memperbarui `public/styles.css`, lalu refresh browser.
-- Lihat log container dengan `npm run dev:logs`.
-- Hentikan stack dengan `npm run dev:stop`.
-
-Kapan masih perlu rebuild container:
-
-- Saat mengubah `Dockerfile`
-- Saat mengubah file di folder `docker/`
-- Saat mengubah `docker-entrypoint.sh`
-
-Untuk kasus di atas, jalankan:
-
-```bash
-npm run dev:rebuild
-```
-
-Contoh:
-
-```bash
-docker run --name au7h \
-  -p 28080:8080 \
-  -p 28443:8443 \
-  -e PUBLIC_HTTPS_PORT=28443 \
-  -v au7h-data:/var/www/data \
-  -v au7h-certs:/var/www/certs \
-  -v au7h-mysql:/var/lib/mysql \
-  au7h
-```
+Pakai `npm run dev:logs` untuk log, `npm run dev:stop` untuk berhenti, dan `npm run dev:rebuild` kalau mengubah `Dockerfile`, `docker/`, atau `docker-entrypoint.sh`.
 
 ## Penyimpanan Persisten
 
