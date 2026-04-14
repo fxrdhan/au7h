@@ -2,7 +2,6 @@
   const storageKey = "au7h-theme"
   const root = document.documentElement
   const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)")
-  let transitionBlockStyle = null
 
   function isTheme(value) {
     return value === "light" || value === "dark"
@@ -26,20 +25,7 @@
   }
 
   function disableTransitionsTemporarily() {
-    if (transitionBlockStyle) {
-      transitionBlockStyle.remove()
-    }
-
-    transitionBlockStyle = document.createElement("style")
-    transitionBlockStyle.setAttribute("data-theme-transition-block", "")
-    transitionBlockStyle.textContent = `
-      *, *::before, *::after {
-        transition: none !important;
-        animation: none !important;
-      }
-    `
-
-    document.head.appendChild(transitionBlockStyle)
+    root.classList.add("theme-changing")
     // Force the browser to apply the transition block before we flip the theme.
     void document.documentElement.offsetHeight
   }
@@ -47,8 +33,7 @@
   function restoreTransitionsAfterPaint() {
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        transitionBlockStyle?.remove()
-        transitionBlockStyle = null
+        root.classList.remove("theme-changing")
       })
     })
   }

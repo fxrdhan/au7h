@@ -3,6 +3,46 @@
 @tailwind utilities;
 
 @font-face {
+  font-family: "Nunito";
+  src: url("/assets/Nunito-400.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("/assets/Nunito-500.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("/assets/Nunito-600.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("/assets/Nunito-700.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Nunito";
+  src: url("/assets/Nunito-800.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Backwards";
   src: url("/assets/Backwards.ttf") format("truetype");
   font-display: swap;
@@ -83,6 +123,7 @@
   html {
     background-color: hsl(var(--background));
     color-scheme: light;
+    font-family: "Nunito", ui-sans-serif, system-ui, sans-serif;
   }
 
   html.dark {
@@ -91,13 +132,33 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: "Nunito", ui-sans-serif, system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   html.theme-changing body,
-  html.theme-changing body *,
-  html.theme-changing body *::before,
-  html.theme-changing body *::after {
+  html.theme-changing body *:not([data-theme-toggle-icon]),
+  html.theme-changing body *:not([data-theme-toggle-icon])::before,
+  html.theme-changing body *:not([data-theme-toggle-icon])::after {
     transition: none !important;
+    animation: none !important;
+  }
+}
+
+@layer components {
+  .theme-toggle-icon {
+    @apply absolute inset-0 h-5 w-5 origin-center;
+    transition:
+      transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      opacity 180ms ease-out;
+    will-change: transform, opacity;
+  }
+
+  .theme-toggle-icon-sun {
+    @apply rotate-0 scale-100 opacity-100 dark:-rotate-90 dark:scale-0 dark:opacity-0;
+  }
+
+  .theme-toggle-icon-moon {
+    @apply rotate-90 scale-0 opacity-0 dark:rotate-0 dark:scale-100 dark:opacity-100;
   }
 }

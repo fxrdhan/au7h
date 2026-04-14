@@ -26,7 +26,7 @@ function render_brand(bool $inverse = false): string
     return '
       <a href="/" class="inline-flex items-center gap-3 text-sm font-semibold tracking-tight ' . $textClass . '">
         <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 ' . $iconClass . '">
-        <span>Au7h</span>
+        <span class="font-extrabold">Au7h</span>
       </a>';
 }
 
@@ -35,7 +35,7 @@ function render_auth_mark(): string
     return '
       <a href="/?mode=register" class="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground dark:text-white">
         <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 dark:invert">
-        <span>Au7h</span>
+        <span class="font-extrabold">Au7h</span>
       </a>';
 }
 
@@ -47,10 +47,10 @@ function render_theme_toggle_button(): string
         data-theme-toggle
         aria-label="Toggle color theme"
         title="Toggle color theme"
-        class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300/75 bg-white/85 text-zinc-700 shadow-sm backdrop-blur-md hover:border-zinc-500 hover:text-zinc-950 focus:outline-none focus:ring-2 focus:ring-zinc-400/45 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:text-white dark:focus:ring-zinc-200/30"
+        class="inline-flex h-10 w-10 items-center justify-center text-zinc-700 transition-colors duration-300 ease-[var(--theme-transition-ease)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/45 dark:text-zinc-100 dark:focus-visible:ring-zinc-200/30"
       >
         <span class="relative h-5 w-5">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="absolute inset-0 h-5 w-5 origin-center dark:-rotate-90 dark:scale-0 dark:opacity-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-theme-toggle-icon class="theme-toggle-icon theme-toggle-icon-sun">
             <circle cx="12" cy="12" r="4.25"></circle>
             <path d="M12 2.75v2.5"></path>
             <path d="M12 18.75v2.5"></path>
@@ -61,8 +61,8 @@ function render_theme_toggle_button(): string
             <path d="m4.93 19.07 1.77-1.77"></path>
             <path d="m17.3 6.7 1.77-1.77"></path>
           </svg>
-          <svg viewBox="0 0 24 24" fill="currentColor" class="absolute inset-0 h-5 w-5 origin-center scale-0 rotate-90 opacity-0 dark:rotate-0 dark:scale-100 dark:opacity-100">
-            <path d="M19.2 15.1c-0.94 0.31-1.95 0.48-3 0.48-5.26 0-9.53-4.27-9.53-9.53 0-1.05 0.17-2.07 0.48-3A9.73 9.73 0 0 0 3.2 12c0 5.41 4.39 9.8 9.8 9.8 3.55 0 6.65-1.89 8.36-4.7-0.73-0.03-1.46-0.12-2.16-0.29z"></path>
+          <svg viewBox="0 0 24 24" fill="currentColor" data-theme-toggle-icon class="theme-toggle-icon theme-toggle-icon-moon">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M9.53 1.72c0.21 0.21 0.28 0.54 0.16 0.82A8.96 8.96 0 0 0 9 6c0 4.97 4.03 9 9 9 1.23 0 2.4-0.25 3.46-0.69 0.28-0.12 0.6-0.05 0.82 0.16 0.21 0.21 0.28 0.54 0.16 0.82A10.53 10.53 0 0 1 12.75 21.75c-5.8 0-10.5-4.7-10.5-10.5 0-4.37 2.67-8.11 6.46-9.69 0.28-0.12 0.6-0.05 0.82 0.16z"></path>
           </svg>
         </span>
       </button>';
