@@ -3924,13 +3924,28 @@ CI saat ini memverifikasi bahwa image bisa dibuild dari build context yang sudah
 trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
 ```
 
-Hasil scan manual menemukan `1` vulnerability severity `HIGH` dan `0` vulnerability severity `CRITICAL` pada image `au7h` berbasis Ubuntu 25.10. Temuan berada pada paket `gpgv` dengan CVE `CVE-2025-68973`; statusnya `fixed`, versi terpasang `2.4.8-2ubuntu2`, dan fixed version `2.4.8-2ubuntu2.1`.
+Scan awal menemukan `1` vulnerability severity `HIGH` dan `0` vulnerability severity `CRITICAL` pada image `au7h` berbasis Ubuntu 25.10. Temuan berada pada paket `gpgv` dengan CVE `CVE-2025-68973`; statusnya `fixed`, versi terpasang `2.4.8-2ubuntu2`, dan fixed version `2.4.8-2ubuntu2.1`. Pemeriksaan `apt-cache policy gpgv` menunjukkan fixed version tersebut sudah tersedia sebagai candidate package dari repository Ubuntu.
 
-Karena scan vulnerability belum menjadi gate wajib di workflow repo ini, laporan tidak mengklaim bahwa image sudah melewati policy CI vulnerability gate. Laporan hanya mencatat hasil scan manual dan menyarankan update base image/package atau rebuild setelah repository Ubuntu menyediakan fixed package pada environment build.
+Perbaikan dilakukan dengan memasukkan `gpgv` secara eksplisit ke daftar package runtime yang di-install saat build image:
+
+**Sumber:** [Dockerfile:16](/home/fxrdhan/au7h/Dockerfile:16)
+
+```dockerfile
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    apache2 \
+    gettext-base \
+    gpgv \
+    iptables \
+```
+
+Setelah image dibuild ulang dengan `docker build --pull --no-cache -t au7h .`, package `gpgv` terpasang sebagai versi fixed `2.4.8-2ubuntu2.1`. Scan ulang Trivy kemudian menunjukkan `0` vulnerability untuk severity `HIGH` dan `CRITICAL`.
+
+Karena scan vulnerability belum menjadi gate wajib di workflow repo ini, laporan tidak mengklaim bahwa image sudah melewati policy CI vulnerability gate. Laporan mencatat hasil scan manual sebelum dan sesudah perbaikan, sedangkan CI tetap dicatat sebatas build/lint/test yang sudah tersedia.
 
 #### Hasil tahap
 
-Supply-chain container sudah dibaca secara eksplisit: image utama memakai tag versi/rilis, dependency build memakai lockfile frozen, CI membangun image, scan Trivy manual sudah dilakukan, dan kekurangan digest pinning atau vulnerability gate dicatat sebagai batasan yang tidak dibesar-besarkan.
+Supply-chain container sudah dibaca secara eksplisit: image utama memakai tag versi/rilis, dependency build memakai lockfile frozen, CI membangun image, temuan Trivy pada `gpgv` sudah diperbaiki melalui rebuild image, scan ulang menunjukkan `0` HIGH/CRITICAL, dan kekurangan digest pinning atau vulnerability gate tetap dicatat sebagai batasan yang tidak dibesar-besarkan.
 
 ### Tahap 23 - Menutup lifecycle secret dan batas privilege database
 
@@ -4227,8 +4242,6 @@ Yang ditunjukkan:
 9. healthcheck container tersedia dan dapat dibaca dari state Docker.
 
 ## 6. Urutan Verifikasi Setelah Implementasi
-
-Bukti visual ditempel langsung pada uji yang relevan, bukan dikumpulkan sebagai lampiran di akhir. Screenshot yang dipilih menunjukkan hasil final yang berhasil, termasuk uji positif dan uji negatif keamanan; uji yang tidak punya screenshot tersendiri tetap dicatat pada tabel hasil aktual. Screenshot percobaan database yang masih menghasilkan `Access denied` tidak dimasukkan karena bukan bukti final. Screenshot Trivy dicatat sebagai hasil scan manual supply-chain, bukan sebagai klaim bahwa workflow CI sudah memiliki vulnerability gate.
 
 ### Uji 1 - Container hidup
 
@@ -4610,6 +4623,10 @@ Jika scanner tersedia, hardening lanjutan dapat diuji dengan:
 
 ```bash
 trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
+docker run --rm --entrypoint sh au7h -lc 'apt-get update && apt-cache policy gpgv'
+docker build --pull --no-cache -t au7h .
+trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
+docker run --rm --entrypoint sh au7h -lc 'apt-get update && apt-cache policy gpgv'
 ```
 
 #### Bukti visual Uji 18
@@ -4620,7 +4637,23 @@ Gambar ini menunjukkan `docker compose -f compose.dev.yaml up -d --build` berhas
 
 ![Hasil Trivy vulnerability scan manual](assets/screenshots/22-trivy-scan-result.png)
 
-Gambar ini menunjukkan `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h` selesai dijalankan. Hasilnya menemukan `1` vulnerability severity `HIGH` dan `0` severity `CRITICAL` pada image `au7h (ubuntu 25.10)`, yaitu `CVE-2025-68973` pada paket `gpgv` dengan fixed version `2.4.8-2ubuntu2.1`.
+Gambar ini menunjukkan scan awal `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h`. Hasilnya menemukan `1` vulnerability severity `HIGH` dan `0` severity `CRITICAL` pada image `au7h (ubuntu 25.10)`, yaitu `CVE-2025-68973` pada paket `gpgv`. Tabel Trivy menunjukkan versi yang terpasang masih `2.4.8-2ubuntu2`, sedangkan fixed version yang tersedia adalah `2.4.8-2ubuntu2.1`.
+
+![Candidate fixed package gpgv sebelum rebuild](assets/screenshots/24-gpgv-candidate-before-fix.png)
+
+Gambar ini menunjukkan `apt-cache policy gpgv` sebelum perbaikan image. Output memperlihatkan `Installed: 2.4.8-2ubuntu2`, sedangkan `Candidate: 2.4.8-2ubuntu2.1`, sehingga fixed package sudah tersedia dari repository Ubuntu dan bisa dipasang saat image dibuild ulang.
+
+![Build ulang image dengan package gpgv](assets/screenshots/25-rebuild-with-gpgv-fixed.png)
+
+Gambar ini menunjukkan `docker build --pull --no-cache -t au7h .` setelah `Dockerfile` diperbarui. Pada langkah `apt-get install`, package `gpgv` sudah masuk daftar package runtime bersama Apache, iptables, MySQL, OpenSSL, PHP, dan dependency lain yang diperlukan.
+
+![Scan ulang Trivy setelah update gpgv](assets/screenshots/26-trivy-clean-after-gpgv-update.png)
+
+Gambar ini menunjukkan scan ulang Trivy setelah image dibuild ulang. Hasil scan `HIGH,CRITICAL` sudah bersih dengan total `0` vulnerability pada target `au7h (ubuntu 25.10)`.
+
+![Versi fixed gpgv sudah terpasang](assets/screenshots/27-gpgv-fixed-version-installed.png)
+
+Gambar ini menunjukkan verifikasi package setelah rebuild. Output `apt-cache policy gpgv` memperlihatkan `Installed` dan `Candidate` sama-sama berada pada versi `2.4.8-2ubuntu2.1`, sehingga image yang dipakai sudah menggunakan versi fixed untuk temuan `CVE-2025-68973`.
 
 ### Uji 19 - Lifecycle secret dan privilege database
 
@@ -4707,7 +4740,7 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | Threat model containering/security | Review Tahap 0A | ancaman jaringan, database leak, SQLi, XSS, CSRF, brute force, oversized input, ACL, Snort, secret leak, privilege container, dan supply-chain sudah dipetakan ke tahap penutup |
 | Runtime privilege dan capability | `docker compose -f compose.dev.yaml config` dan review entrypoint | `app` dan `snort` memakai `cap_drop: ALL`; `app` menambahkan ulang `CHOWN`, `DAC_OVERRIDE`, `NET_ADMIN`, `SETGID`, dan `SETUID`; `snort` menambahkan ulang `DAC_OVERRIDE`/`NET_ADMIN`/`NET_RAW`; `no-new-privileges:true` aktif; root filesystem `snort` read-only; tidak ada `privileged: true`; MySQL dijalankan dengan `--user=mysql` |
 | Supply-chain image dan dependency | Review `Dockerfile`, `compose.dev.yaml`, `bun.lock`, dan CI | builder memakai `oven/bun:1.3.6`, runtime memakai `ubuntu:25.10`, dependency memakai `--frozen-lockfile`, CI build image berjalan; `snort3:latest` dicatat sebagai tradeoff demo |
-| Trivy vulnerability scan manual | `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h` | scan selesai; ditemukan `1` HIGH dan `0` CRITICAL pada paket `gpgv` (`CVE-2025-68973`), status `fixed`, fixed version `2.4.8-2ubuntu2.1` |
+| Trivy vulnerability scan manual | scan awal, cek `apt-cache policy gpgv`, update `Dockerfile`, rebuild image, lalu scan ulang | scan awal menemukan `1` HIGH dan `0` CRITICAL pada paket `gpgv` (`CVE-2025-68973`); setelah `gpgv` dipasang sebagai versi `2.4.8-2ubuntu2.1`, scan ulang menunjukkan `0` HIGH/CRITICAL |
 | Lifecycle secret dan privilege database | Review `docker-entrypoint.sh`, ignore file, dan bootstrap SQL | secret dibuat runtime di `/var/www/data`, `data/` dan `certs/` dikecualikan dari Git/build context, grant user aplikasi dibatasi ke database aplikasi, `GRANT ALL` dijelaskan sebagai tradeoff bootstrap demo |
 | Healthcheck container | `docker image inspect --format '{{json .Config.Healthcheck}}' au7h`, `docker container inspect --format '{{json .State.Health}}' au7h-app-1`, dan `docker compose -f compose.dev.yaml ps` | metadata image memuat `Test:["CMD-SHELL","php /usr/local/bin/au7h-healthcheck.php"]`; container `au7h-app-1` berstatus `healthy`; Compose menampilkan `Up ... (healthy)` |
 
@@ -4808,7 +4841,9 @@ Catatan pembacaan: checklist ini dipakai sebagai pemeriksaan terakhir tepat sebe
 [x] tidak ada klaim bahwa capability tinggi adalah pola produksi ideal
 [x] supply-chain image dan dependency dicatat transparan
 [x] lockfile dependency dipakai dengan frozen install
-[x] Trivy scan manual selesai dan temuannya dicatat
+[x] Trivy scan manual awal menemukan 1 HIGH pada gpgv dan temuannya dicatat
+[x] Dockerfile meng-upgrade gpgv ke fixed version saat rebuild image
+[x] Trivy scan ulang setelah rebuild menunjukkan 0 HIGH/CRITICAL
 [x] status digest pinning dan CI vulnerability gate tidak dibesar-besarkan
 [x] lifecycle secret runtime dijelaskan
 [x] privilege database aplikasi dijelaskan sebagai tradeoff bootstrap demo

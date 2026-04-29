@@ -17,6 +17,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     apache2 \
     gettext-base \
+    gpgv \
     iptables \
     libapache2-mod-php8.4 \
     mysql-server \
