@@ -5,6 +5,7 @@ certs/
 .github/
 .playwright-cli/
 output/
+docs/
 
 .DS_Store
 npm-debug.log*

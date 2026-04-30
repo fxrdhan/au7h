@@ -3711,19 +3711,15 @@ certs/
 .github/
 .playwright-cli/
 output/
+docs/
 
 .DS_Store
 npm-debug.log*
 
-DOCUMENTATION.md
-REFERENCES.md
-PETA_TUTORIAL_PROYEK.md
-LAPORAN_RANCANG_PROYEK_DARI_NOL.md
 *.bak
-STATUS_AUDIT_KUTIPAN_SCRAPE.md
 ```
 
-Bagian ini penting karena Docker build tidak perlu menerima private key lokal, data database, history Git, atau dokumen kerja. Image final tetap mendapatkan file aplikasi lewat `COPY` eksplisit di Dockerfile, bukan lewat build context yang terlalu longgar.
+Bagian ini penting karena Docker build tidak perlu menerima private key lokal, data database, history Git, metadata CI, atau folder dokumentasi. Image final tetap mendapatkan file aplikasi lewat `COPY` eksplisit di Dockerfile, bukan lewat build context yang terlalu longgar.
 
 **Langkah 3:**
 
@@ -3935,13 +3931,43 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     apache2 \
     gettext-base \
-    gpgv \
     iptables \
 ```
 
 Setelah image dibuild ulang dengan `docker build --pull --no-cache -t au7h .`, package `gpgv` terpasang sebagai versi fixed `2.4.8-2ubuntu2.1`. Scan ulang Trivy kemudian menunjukkan `0` vulnerability untuk severity `HIGH` dan `CRITICAL`.
 
-Karena scan vulnerability belum menjadi gate wajib di workflow repo ini, laporan tidak mengklaim bahwa image sudah melewati policy CI vulnerability gate. Laporan mencatat hasil scan manual sebelum dan sesudah perbaikan, sedangkan CI tetap dicatat sebatas build/lint/test yang sudah tersedia.
+![Build image dan sumber supply-chain](assets/screenshots/16-build-image-supply-chain.png)
+
+Gambar ini menunjukkan `docker compose -f compose.dev.yaml up -d --build` berhasil membangun image `au7h`. Output build juga memperlihatkan sumber image builder `oven/bun:1.3.6`, runtime `ubuntu:25.10`, penggunaan `.dockerignore`, `bun install --frozen-lockfile`, dan container `app` serta `snort` berhasil start.
+
+![Scan awal Trivy menemukan gpgv](assets/screenshots/22-trivy-scan-result.png)
+
+Gambar ini menunjukkan scan awal `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h`. Hasilnya menemukan `1` vulnerability severity `HIGH` dan `0` severity `CRITICAL` pada image `au7h (ubuntu 25.10)`, yaitu `CVE-2025-68973` pada paket `gpgv`. Tabel Trivy menunjukkan versi yang terpasang masih `2.4.8-2ubuntu2`, sedangkan fixed version yang tersedia adalah `2.4.8-2ubuntu2.1`.
+
+![Candidate fixed package gpgv sebelum rebuild](assets/screenshots/24-gpgv-candidate-before-fix.png)
+
+Gambar ini menunjukkan `apt-cache policy gpgv` sebelum perbaikan image. Output memperlihatkan `Installed: 2.4.8-2ubuntu2`, sedangkan `Candidate: 2.4.8-2ubuntu2.1`, sehingga fixed package sudah tersedia dari repository Ubuntu dan bisa dipasang saat image dibuild ulang.
+
+Setelah candidate fixed terlihat, `Dockerfile` diedit dengan menambahkan `gpgv` ke daftar package runtime. Bagian ini menjadi kunci perbaikan karena package yang rentan tidak hanya dicek versinya, tetapi juga diminta ulang oleh `apt-get install` saat build image.
+
+**Sumber:** [Dockerfile:16](/home/fxrdhan/au7h/Dockerfile:16)
+
+```dockerfile
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    apache2 \
+    gettext-base \
+    gpgv \
+    iptables \
+```
+
+![Build ulang image dengan package gpgv](assets/screenshots/25-rebuild-with-gpgv-fixed.png)
+
+Gambar ini menunjukkan `docker build --pull --no-cache -t au7h .` setelah `Dockerfile` diperbarui. Pada langkah `apt-get install`, package `gpgv` sudah masuk daftar package runtime.
+
+![Versi fixed gpgv sudah terpasang](assets/screenshots/27-gpgv-fixed-version-installed.png)
+
+Gambar ini menunjukkan verifikasi package setelah rebuild. Output `apt-cache policy gpgv` memperlihatkan `Installed` dan `Candidate` sama-sama berada pada versi `2.4.8-2ubuntu2.1`, sehingga image yang dipakai sudah menggunakan versi fixed untuk temuan `CVE-2025-68973`.
 
 #### Hasil tahap
 
@@ -3998,9 +4024,10 @@ data/
 certs/
 .git/
 .github/
+docs/
 ```
 
-`data/` menutup risiko secret runtime lokal ikut Git. `certs/` menutup risiko private key TLS lokal ikut Git atau build context. `.git/` dan `.github/` juga dikeluarkan dari build context agar metadata repo dan CI tidak perlu masuk ke image runtime.
+`data/` menutup risiko secret runtime lokal ikut Git. `certs/` menutup risiko private key TLS lokal ikut Git atau build context. `.git/`, `.github/`, dan `docs/` juga dikeluarkan dari build context agar metadata repo, CI, dan dokumen laporan tidak perlu masuk ke image runtime.
 
 **Langkah 3:**
 
@@ -4216,7 +4243,7 @@ Yang ditunjukkan:
 
 1. test helper keamanan lulus,
 2. `data/` dan `certs/` tidak masuk Git,
-3. Docker build context mengecualikan `data/`, `certs/`, `.git/`, dan cache lokal,
+3. Docker build context mengecualikan `data/`, `certs/`, `.git/`, `.github/`, `docs/`, dan cache lokal,
 4. CI punya langkah lint PHP, test PHP, dan build image.
 
 ### 6.9. Demo privilege, supply-chain, dan lifecycle secret
@@ -4561,7 +4588,7 @@ sed -n '1,120p' .github/workflows/ci.yml
 Yang harus terlihat:
 
 1. `.gitignore` mengecualikan `data/`, `certs/`, backup, dan catatan privat,
-2. `.dockerignore` mengecualikan `data/`, `certs/`, `.git/`, `.github/`, cache lokal, dan artefak yang tidak dibutuhkan image,
+2. `.dockerignore` mengecualikan `data/`, `certs/`, `.git/`, `.github/`, `docs/`, cache lokal, dan artefak yang tidak dibutuhkan image,
 3. CI menjalankan PHP syntax lint,
 4. CI menjalankan `bun run test:php`,
 5. CI membangun image Docker sebagai validasi build context.
@@ -4623,37 +4650,13 @@ Jika scanner tersedia, hardening lanjutan dapat diuji dengan:
 
 ```bash
 trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
-docker run --rm --entrypoint sh au7h -lc 'apt-get update && apt-cache policy gpgv'
-docker build --pull --no-cache -t au7h .
-trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
-docker run --rm --entrypoint sh au7h -lc 'apt-get update && apt-cache policy gpgv'
 ```
 
 #### Bukti visual Uji 18
 
-![Build image dan sumber supply-chain](assets/screenshots/16-build-image-supply-chain.png)
-
-Gambar ini menunjukkan `docker compose -f compose.dev.yaml up -d --build` berhasil membangun image `au7h`. Output build juga memperlihatkan sumber image builder `oven/bun:1.3.6`, runtime `ubuntu:25.10`, penggunaan `.dockerignore`, `bun install --frozen-lockfile`, dan container `app` serta `snort` berhasil start.
-
-![Hasil Trivy vulnerability scan manual](assets/screenshots/22-trivy-scan-result.png)
-
-Gambar ini menunjukkan scan awal `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h`. Hasilnya menemukan `1` vulnerability severity `HIGH` dan `0` severity `CRITICAL` pada image `au7h (ubuntu 25.10)`, yaitu `CVE-2025-68973` pada paket `gpgv`. Tabel Trivy menunjukkan versi yang terpasang masih `2.4.8-2ubuntu2`, sedangkan fixed version yang tersedia adalah `2.4.8-2ubuntu2.1`.
-
-![Candidate fixed package gpgv sebelum rebuild](assets/screenshots/24-gpgv-candidate-before-fix.png)
-
-Gambar ini menunjukkan `apt-cache policy gpgv` sebelum perbaikan image. Output memperlihatkan `Installed: 2.4.8-2ubuntu2`, sedangkan `Candidate: 2.4.8-2ubuntu2.1`, sehingga fixed package sudah tersedia dari repository Ubuntu dan bisa dipasang saat image dibuild ulang.
-
-![Build ulang image dengan package gpgv](assets/screenshots/25-rebuild-with-gpgv-fixed.png)
-
-Gambar ini menunjukkan `docker build --pull --no-cache -t au7h .` setelah `Dockerfile` diperbarui. Pada langkah `apt-get install`, package `gpgv` sudah masuk daftar package runtime bersama Apache, iptables, MySQL, OpenSSL, PHP, dan dependency lain yang diperlukan.
-
 ![Scan ulang Trivy setelah update gpgv](assets/screenshots/26-trivy-clean-after-gpgv-update.png)
 
-Gambar ini menunjukkan scan ulang Trivy setelah image dibuild ulang. Hasil scan `HIGH,CRITICAL` sudah bersih dengan total `0` vulnerability pada target `au7h (ubuntu 25.10)`.
-
-![Versi fixed gpgv sudah terpasang](assets/screenshots/27-gpgv-fixed-version-installed.png)
-
-Gambar ini menunjukkan verifikasi package setelah rebuild. Output `apt-cache policy gpgv` memperlihatkan `Installed` dan `Candidate` sama-sama berada pada versi `2.4.8-2ubuntu2.1`, sehingga image yang dipakai sudah menggunakan versi fixed untuk temuan `CVE-2025-68973`.
+Gambar ini menunjukkan hasil akhir Uji 18 setelah image dibuild ulang dan package `gpgv` memakai versi fixed. Scan Trivy untuk severity `HIGH,CRITICAL` sudah bersih dengan total `0` vulnerability pada target `au7h (ubuntu 25.10)`.
 
 ### Uji 19 - Lifecycle secret dan privilege database
 
@@ -4735,7 +4738,7 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | ACL container | `bun run acl:status` | chain `AU7H_INPUT` aktif; HTTP/HTTPS `ACCEPT`; MySQL `3306` dan SSH `22` `REJECT`; ICMP echo request `DROP` |
 | Batas satu container | Review `Dockerfile` dan `compose.dev.yaml` | container `app` memuat Apache/PHP/MySQL; `snort` adalah sidecar IDS, bukan pemisahan web/database |
 | Hygiene Git untuk secret lokal | Review `.gitignore` | `data/`, `certs/`, backup, dan catatan privat dikecualikan dari Git |
-| Hygiene Docker build context | Review `.dockerignore` | `data/`, `certs/`, `.git/`, `.github/`, cache lokal, dan artefak pendukung tidak dikirim ke build context |
+| Hygiene Docker build context | Review `.dockerignore` | `data/`, `certs/`, `.git/`, `.github/`, `docs/`, cache lokal, dan artefak pendukung tidak dikirim ke build context |
 | CI check keamanan dasar | Review `.github/workflows/ci.yml` | workflow menjalankan PHP syntax lint, `bun run test:php`, dan `docker build -t au7h-ci .` |
 | Threat model containering/security | Review Tahap 0A | ancaman jaringan, database leak, SQLi, XSS, CSRF, brute force, oversized input, ACL, Snort, secret leak, privilege container, dan supply-chain sudah dipetakan ke tahap penutup |
 | Runtime privilege dan capability | `docker compose -f compose.dev.yaml config` dan review entrypoint | `app` dan `snort` memakai `cap_drop: ALL`; `app` menambahkan ulang `CHOWN`, `DAC_OVERRIDE`, `NET_ADMIN`, `SETGID`, dan `SETUID`; `snort` menambahkan ulang `DAC_OVERRIDE`/`NET_ADMIN`/`NET_RAW`; `no-new-privileges:true` aktif; root filesystem `snort` read-only; tidak ada `privileged: true`; MySQL dijalankan dengan `--user=mysql` |
@@ -4829,7 +4832,7 @@ Catatan pembacaan: checklist ini dipakai sebagai pemeriksaan terakhir tepat sebe
 [x] test helper keamanan otomatis tersedia
 [x] test mencakup validasi input, CSRF termasuk token kosong/format rusak, HMAC, enkripsi username, hash password, dan rate limit
 [x] .gitignore mengecualikan data runtime dan certs lokal
-[x] .dockerignore mengecualikan data, certs, .git, .github, dan cache lokal
+[x] .dockerignore mengecualikan data, certs, .git, .github, docs, dan cache lokal
 [x] CI menjalankan PHP syntax lint
 [x] CI menjalankan test helper keamanan
 [x] CI membangun Docker image dari build context yang dibatasi
