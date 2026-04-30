@@ -69,7 +69,7 @@ Posisi masalah untuk tugas ini adalah:
 2. pengujian dilakukan lewat browser dan konfigurasi container,
 3. diminta **satu container** untuk web server dan database,
 
-## 2. Target 
+## 2. Target
 
 | Kebutuhan | Target |
 | --- | --- |
@@ -3716,10 +3716,15 @@ docs/
 .DS_Store
 npm-debug.log*
 
+DOCUMENTATION.md
+REFERENCES.md
+PETA_TUTORIAL_PROYEK.md
+LAPORAN_RANCANG_PROYEK_DARI_NOL.md
 *.bak
+STATUS_AUDIT_KUTIPAN_SCRAPE.md
 ```
 
-Bagian ini penting karena Docker build tidak perlu menerima private key lokal, data database, history Git, metadata CI, atau folder dokumentasi. Image final tetap mendapatkan file aplikasi lewat `COPY` eksplisit di Dockerfile, bukan lewat build context yang terlalu longgar.
+Bagian ini penting karena Docker build tidak perlu menerima private key lokal, data database, history Git, metadata CI, folder dokumentasi, atau dokumen kerja pendukung. Image final tetap mendapatkan file aplikasi lewat `COPY` eksplisit di Dockerfile, bukan lewat build context yang terlalu longgar.
 
 **Langkah 3:**
 
@@ -3922,19 +3927,11 @@ trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
 
 Scan awal menemukan `1` vulnerability severity `HIGH` dan `0` vulnerability severity `CRITICAL` pada image `au7h` berbasis Ubuntu 25.10. Temuan berada pada paket `gpgv` dengan CVE `CVE-2025-68973`; statusnya `fixed`, versi terpasang `2.4.8-2ubuntu2`, dan fixed version `2.4.8-2ubuntu2.1`. Pemeriksaan `apt-cache policy gpgv` menunjukkan fixed version tersebut sudah tersedia sebagai candidate package dari repository Ubuntu.
 
-Perbaikan dilakukan dengan memasukkan `gpgv` secara eksplisit ke daftar package runtime yang di-install saat build image:
+Perbaikan dilakukan dengan memasukkan `gpgv` secara eksplisit ke daftar package runtime yang di-install saat build image. Detail perubahan `Dockerfile` ditunjukkan pada bukti proses di bawah.
 
-**Sumber:** [Dockerfile:16](/home/fxrdhan/au7h/Dockerfile:16)
+Setelah image dibuild ulang dengan `docker build --pull --no-cache -t au7h .`, package `gpgv` terpasang sebagai versi fixed `2.4.8-2ubuntu2.1`. Scan ulang Trivy kemudian menunjukkan `0` vulnerability untuk severity `HIGH` dan `CRITICAL`. Scan vulnerability ini tetap dicatat sebagai pengujian manual, belum sebagai gate wajib di workflow CI.
 
-```dockerfile
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-    apache2 \
-    gettext-base \
-    iptables \
-```
-
-Setelah image dibuild ulang dengan `docker build --pull --no-cache -t au7h .`, package `gpgv` terpasang sebagai versi fixed `2.4.8-2ubuntu2.1`. Scan ulang Trivy kemudian menunjukkan `0` vulnerability untuk severity `HIGH` dan `CRITICAL`.
+#### Bukti proses perbaikan
 
 ![Build image dan sumber supply-chain](assets/screenshots/16-build-image-supply-chain.png)
 
@@ -4131,7 +4128,7 @@ Container aplikasi sekarang punya healthcheck internal. Jika Apache, PHP, HTTPS,
 
 Bagian ini adalah contekan demo cepat. Detail uji lengkap tetap ada pada bagian verifikasi setelahnya, tetapi urutan berikut lebih enak dipakai saat sesi evaluasi meminta bukti langsung.
 
-### 6.1. Start container dan pastikan service aktif
+### 5.1. Start container dan pastikan service aktif
 
 ```bash
 docker compose -f compose.dev.yaml up -d --build
@@ -4144,7 +4141,7 @@ Yang ditunjukkan:
 2. service `snort` aktif sebagai IDS sidecar,
 3. port HTTP `10080` dan HTTPS `10443` terpublish.
 
-### 6.2. Buka aplikasi lewat browser
+### 5.2. Buka aplikasi lewat browser
 
 Pada demo lokal, browser dapat menampilkan status **Connection is secure** dan **Certificate is valid** jika file `certs/server.crt` yang dipakai adalah sertifikat `localhost` dari local CA, misalnya `mkcert`. Di setup ini `compose.dev.yaml` me-mount `./certs` ke `/var/www/certs`, lalu Apache memakai path tersebut lewat `SSLCertificateFile`. Entry point hanya membuat sertifikat self-signed fallback ketika `server.crt` atau `server.key` belum tersedia.
 
@@ -4166,7 +4163,7 @@ Yang ditunjukkan:
 2. form memakai metode `POST`,
 3. form membawa `csrf_token`.
 
-### 6.3. Buktikan HTTP diarahkan ke HTTPS
+### 5.3. Buktikan HTTP diarahkan ke HTTPS
 
 ```bash
 curl -k -I http://localhost:10080
@@ -4177,7 +4174,7 @@ Yang ditunjukkan:
 1. status `301 Moved Permanently`,
 2. header `Location: https://localhost:10443/`.
 
-### 6.4. Demo flow utama login-register
+### 5.4. Demo flow utama login-register
 
 Urutan demo:
 
@@ -4188,7 +4185,7 @@ Urutan demo:
 5. logout,
 6. coba login dengan akun salah dan tunjukkan redirect ke `/not-registered.php`.
 
-### 6.5. Buktikan database tidak menyimpan kredensial plaintext
+### 5.5. Buktikan database tidak menyimpan kredensial plaintext
 
 Jalankan query inspeksi tabel `users` dari MySQL container:
 
@@ -4203,7 +4200,7 @@ Yang ditunjukkan:
 3. `password_hash` berformat `$argon2id$...`,
 4. tidak ada username/password plaintext di database.
 
-### 6.6. Demo uji negatif keamanan
+### 5.6. Demo uji negatif keamanan
 
 Urutan paling cepat:
 
@@ -4215,7 +4212,7 @@ Urutan paling cepat:
 
 Catatan saat menjelaskan SQL injection: payload memang ditolak oleh validasi username sebelum query dijalankan, dan layer database tetap memakai PDO prepared statement sebagai pertahanan utama bila input valid sampai ke query.
 
-### 6.7. Demo Snort IDS dan ACL jaringan
+### 5.7. Demo Snort IDS dan ACL jaringan
 
 ```bash
 bun run snort:test-rules
@@ -4230,7 +4227,7 @@ Yang ditunjukkan:
 4. HTTP/HTTPS diizinkan,
 5. MySQL `3306`, SSH `22`, dan ICMP dibatasi sesuai ACL.
 
-### 6.8. Demo test keamanan dan hygiene secret
+### 5.8. Demo test keamanan dan hygiene secret
 
 ```bash
 bun run test
@@ -4246,7 +4243,7 @@ Yang ditunjukkan:
 3. Docker build context mengecualikan `data/`, `certs/`, `.git/`, `.github/`, `docs/`, dan cache lokal,
 4. CI punya langkah lint PHP, test PHP, dan build image.
 
-### 6.9. Demo privilege, supply-chain, dan lifecycle secret
+### 5.9. Demo privilege, supply-chain, dan lifecycle secret
 
 ```bash
 docker compose -f compose.dev.yaml config
@@ -4787,7 +4784,7 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 9. `.gitignore` dan `.dockerignore` adalah kontrol hygiene, bukan pengganti secret manager produksi. Untuk demo lokal, keduanya mencegah data runtime dan private key sertifikat lokal ikut tersimpan atau terkirim ke build context.
 10. Container aplikasi menjatuhkan capability default lalu menambahkan ulang capability bootstrap/ACL yang diperlukan. `NET_ADMIN` tetap privilege tinggi karena dipakai untuk memasang ACL `iptables`, bukan rekomendasi default produksi. Root filesystem `app` belum read-only karena entrypoint masih menulis konfigurasi runtime dan bootstrap data.
 11. Snort berjalan sebagai root dengan capability default di-drop, lalu hanya `DAC_OVERRIDE`, `NET_ADMIN`, dan `NET_RAW` ditambahkan ulang karena image perlu mengeksekusi binary Snort dan IDS perlu akses packet capture. Root filesystem Snort dibuat read-only dan penulisan alert diarahkan ke volume log.
-12. Image utama memakai tag versi/rilis dan dependency memakai lockfile frozen, tetapi belum semua image dipin ke digest. `ciscotalos/snort3:latest` tetap dicatat sebagai tradeoff demo.
+12. Image utama memakai tag versi/rilis dan dependency memakai lockfile frozen, tetapi belum semua image dipin ke digest. `ciscotalos/snort3:latest` tetap dicatat sebagai tradeoff demo. Scan Trivy dilakukan manual dan belum menjadi gate wajib di workflow CI.
 13. User database aplikasi mendapat `GRANT ALL PRIVILEGES` pada database aplikasi agar bootstrap schema demo bisa otomatis. Untuk produksi, hak runtime sebaiknya dipersempit dan dipisah dari user migration.
 
 ## 9. Checklist Final Sebelum Presentasi
@@ -4881,9 +4878,16 @@ Bagian ini menunjukkan susunan repositori pada kondisi akhir proyek. Susunannya 
 
 ```text
 au7h/
+├── .dockerignore
+├── .gitignore
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── Dockerfile
 ├── docker-entrypoint.sh
 ├── compose.dev.yaml
+├── package.json
+├── bun.lock
 ├── docker/
 │   ├── apache-global.conf
 │   ├── apache-http.conf.template
@@ -4911,7 +4915,16 @@ au7h/
 │   ├── login.php
 │   ├── welcome.php
 │   ├── not-registered.php
-│   └── logout.php
+│   ├── logout.php
+│   ├── styles.css
+│   ├── favicon.svg
+│   ├── assets/
+│   └── vendor/
+├── resources/
+│   └── tailwind.css
+├── scripts/
+│   ├── sync-motion-vendor.mjs
+│   └── update-snort-community-rules.sh
 ├── security/
 │   └── snort/
 │       ├── snort.lua
@@ -4921,10 +4934,15 @@ au7h/
 │           └── community.rules
 ├── tests/
 │   └── AuthSecurityTest.php
-└── certs/
+├── docs/
+│   ├── LAPORAN_PROYEK.md
+│   ├── assets/
+│   └── scrapes/
+├── certs/  (lokal, dikecualikan dari Git/Docker)
+└── data/   (runtime, dikecualikan dari Git/Docker)
 ```
 
-Struktur akhir ini dipilih untuk membatasi area yang boleh disentuh browser, memusatkan bootstrap request, memisahkan concern aplikasi, dan memisahkan concern runtime container dari logika PHP.
+Struktur akhir ini dipilih untuk membatasi area yang boleh disentuh browser, memusatkan bootstrap request, memisahkan concern aplikasi, memisahkan concern runtime container dari logika PHP, dan menjaga dokumentasi tetap di luar Docker build context.
 
 Alasan struktur:
 
@@ -4934,6 +4952,7 @@ Alasan struktur:
 4. `security/snort/` dipisah karena Snort IDS adalah concern monitoring jaringan. [security/snort/snort.lua](/home/fxrdhan/au7h/security/snort/snort.lua:1) memuat konfigurasi IDS, sedangkan [security/snort/rules/au7h.rules](/home/fxrdhan/au7h/security/snort/rules/au7h.rules:1), [security/snort/rules/local.rules](/home/fxrdhan/au7h/security/snort/rules/local.rules:1), dan [security/snort/rules/community.rules](/home/fxrdhan/au7h/security/snort/rules/community.rules:1) memisahkan rule aggregator, rule lokal, dan rule komunitas.
 5. `tests/` disiapkan untuk verifikasi helper keamanan. [tests/AuthSecurityTest.php](/home/fxrdhan/au7h/tests/AuthSecurityTest.php:1) memeriksa validasi input, normalisasi username, HMAC lookup, enkripsi username, hashing password, CSRF token, dan policy rate limit.
 6. `config/bootstrap.php` dipakai sebagai bootstrap aplikasi agar semua endpoint publik memulai request dari titik inisialisasi yang sama. File ini me-load `Config`, `Database`, `Http`, `Auth`, `RateLimiter`, dan `Views`, lalu memanggil `ensure_app_booted();`, sehingga setup koneksi, session, helper HTTP, rate limit, dan renderer tidak perlu diulang di setiap file endpoint. Pola ini terlihat di [config/bootstrap.php](/home/fxrdhan/au7h/config/bootstrap.php:1) dan dipakai ulang dari [public/index.php](/home/fxrdhan/au7h/public/index.php:1).
+7. `resources/`, `scripts/`, `.github/`, dan `docs/` adalah area pendukung: source CSS, sinkronisasi vendor asset, CI, dan dokumentasi laporan. Folder `docs/` tetap berada di repo untuk bukti dan laporan, tetapi dikeluarkan dari Docker build context lewat `.dockerignore`.
 
 ### Folder `docker/`
 
