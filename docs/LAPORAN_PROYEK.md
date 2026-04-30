@@ -17,13 +17,13 @@
   - [Tahap 7 - Menulis konfigurasi aplikasi dan bootstrap](#tahap-7---menulis-konfigurasi-aplikasi-dan-bootstrap)
   - [Tahap 8 - Mendesain schema database yang memenuhi privasi dan rate limit](#tahap-8---mendesain-schema-database-yang-memenuhi-privasi-dan-rate-limit)
   - [Tahap 9 - Menulis helper keamanan inti](#tahap-9---menulis-helper-keamanan-inti)
-  - [Tahap 10 - Menulis seluruh query database dengan prepared statement](#tahap-10---menulis-seluruh-query-database-dengan-prepared-statement)
+  - [Tahap 10 - Menulis query akun dengan prepared statement](#tahap-10---menulis-query-akun-dengan-prepared-statement)
   - [Tahap 11 - Membuat halaman awal berisi form register dan login](#tahap-11---membuat-halaman-awal-berisi-form-register-dan-login)
-  - [Tahap 12 - Menulis endpoint registrasi](#tahap-12---menulis-endpoint-registrasi)
-  - [Tahap 13 - Menulis endpoint login](#tahap-13---menulis-endpoint-login)
-  - [Tahap 14 - Menulis landing page sukses dan gagal](#tahap-14---menulis-landing-page-sukses-dan-gagal)
-  - [Tahap 15 - Menambahkan logout aman](#tahap-15---menambahkan-logout-aman)
-  - [Tahap 16 - Menambahkan rate limiting login dan register](#tahap-16---menambahkan-rate-limiting-login-dan-register)
+  - [Tahap 12 - Menambahkan rate limiting login dan register](#tahap-12---menambahkan-rate-limiting-login-dan-register)
+  - [Tahap 13 - Menulis endpoint registrasi](#tahap-13---menulis-endpoint-registrasi)
+  - [Tahap 14 - Menulis endpoint login](#tahap-14---menulis-endpoint-login)
+  - [Tahap 15 - Menulis landing page sukses dan gagal](#tahap-15---menulis-landing-page-sukses-dan-gagal)
+  - [Tahap 16 - Menambahkan logout aman](#tahap-16---menambahkan-logout-aman)
   - [Tahap 17 - Menyiapkan Docker Compose untuk development dan demo](#tahap-17---menyiapkan-docker-compose-untuk-development-dan-demo)
   - [Tahap 18 - Menambahkan Snort IDS dan ACL Jaringan](#tahap-18---menambahkan-snort-ids-dan-acl-jaringan)
   - [Tahap 19 - Menulis test otomatis untuk helper keamanan](#tahap-19---menulis-test-otomatis-untuk-helper-keamanan)
@@ -57,9 +57,9 @@
   - [Hasil Verifikasi Aktual](#hasil-verifikasi-aktual)
 - [7. Pemetaan Requirement Tugas Ke Tahap Implementasi](#7-pemetaan-requirement-tugas-ke-tahap-implementasi)
 - [8. Catatan Transparansi Tentang Bagian Yang Sengaja Tidak Dibesar-besarkan](#8-catatan-transparansi-tentang-bagian-yang-sengaja-tidak-dibesar-besarkan)
-- [9. Checklist Final Sebelum Presentasi](#9-checklist-final-sebelum-presentasi)
-- [10. Ringkasan Strategi Dari Nol](#10-ringkasan-strategi-dari-nol)
-- [11. Struktur Akhir Proyek](#11-struktur-akhir-proyek)
+- [9. Ringkasan Strategi Dari Nol](#9-ringkasan-strategi-dari-nol)
+- [10. Struktur Akhir Proyek](#10-struktur-akhir-proyek)
+- [11. Checklist Final Sebelum Presentasi](#11-checklist-final-sebelum-presentasi)
 
 ## 1. Pendahuluan
 
@@ -205,9 +205,9 @@ Fokus threat model sengaja dibatasi pada containering dan security. UI hanya dia
 | Traffic login disadap di jaringan | Credential dan session bisa terbaca | HTTPS, TLS 1.2/1.3, redirect HTTP ke HTTPS | Tahap 4 |
 | Database bocor | Username/password bisa terbaca asli | HMAC lookup, AES-256-GCM untuk username, Argon2id untuk password | Tahap 8, 9 |
 | SQL injection | Login bisa dibypass atau data bocor | Prepared statement PDO, native prepares, validasi input | Tahap 10 |
-| XSS | Script attacker bisa berjalan di browser | Output encoding, allowlist input, CSP | Tahap 5, 9, 11, 14 |
-| CSRF | Aksi login/logout/register bisa dipicu lintas situs | Token CSRF, `POST` only, cookie `SameSite=Strict` | Tahap 6, 9, 12, 13, 15 |
-| Brute force login/register | Password ditebak atau akun dibuat massal | Rate limit berbasis database | Tahap 8, 16 |
+| XSS | Script attacker bisa berjalan di browser | Output encoding, allowlist input, CSP | Tahap 5, 9, 11, 15 |
+| CSRF | Aksi login/logout/register bisa dipicu lintas situs | Token CSRF, `POST` only, cookie `SameSite=Strict` | Tahap 6, 9, 11, 13, 14, 16 |
+| Brute force login/register | Password ditebak atau akun dibuat massal | Rate limit berbasis database | Tahap 8, 12 |
 | Oversized input / buffer abuse | Request terlalu besar memaksa parsing tidak perlu | Batas input aplikasi, `post_max_size`, upload off, runtime high-level | Tahap 6, 9 |
 | Port sensitif terbuka | MySQL/SSH/ICMP bisa diakses langsung | MySQL bind localhost, ACL `iptables`, port publish hanya HTTP/HTTPS | Tahap 3, 17, 18 |
 | Traffic serangan tidak terlihat | Serangan jaringan sulit dibuktikan saat demo | Snort IDS sidecar, local rules, alert log | Tahap 18 |
@@ -333,6 +333,10 @@ Paket dasar pada tahap awal:
 | `openssl` | Menyediakan tool kriptografi. | Komponen ini dipakai oleh runtime server untuk kebutuhan keamanan transport dan secret. |
 | `php8.4` | Menyediakan runtime utama PHP. | File endpoint di `public/` dan helper di `src/` dijalankan oleh PHP. Paket ini adalah interpreter dasar untuk logika register, login, session, CSRF, validasi input, dan rendering halaman. |
 | `php8.4-mysql` | Menyediakan ekstensi PHP untuk koneksi MySQL/PDO. | Kode aplikasi memakai database MySQL melalui PHP. Ekstensi ini memungkinkan prepared statement PDO berjalan, sehingga query login/register dapat dibuat aman dari SQL injection. |
+
+#### Hasil tahap
+
+Image dasar sudah memuat komponen minimum yang diminta tugas: Apache, PHP, MySQL, dan OpenSSL. Tahap berikutnya tinggal memberi environment yang konsisten agar komponen-komponen ini bisa dibootstrap dalam satu runtime.
 
 ### Tahap 2 - Menetapkan environment inti container
 
@@ -1361,6 +1365,10 @@ function require_post_method(): void
 }
 ```
 
+#### Hasil tahap
+
+Bootstrap aplikasi sudah menjadi jalur tunggal untuk session, header dasar, helper HTTP, dan inisialisasi database. Dengan fondasi ini, endpoint publik berikutnya tidak perlu mengulang setup keamanan secara manual.
+
 ### Tahap 8 - Mendesain schema database yang memenuhi privasi dan rate limit
 
 #### Tujuan
@@ -1870,17 +1878,17 @@ function verify_stored_password(string $password, string $storedHash): bool
 2. username tidak dicari lewat ciphertext,
 3. password tidak pernah disimpan dalam bentuk yang bisa didekripsi balik.
 
-### Tahap 10 - Menulis seluruh query database dengan prepared statement
+### Tahap 10 - Menulis query akun dengan prepared statement
 
 #### Tujuan
 
-Menutup celah SQL injection dan memastikan akses data konsisten.
+Menutup celah SQL injection pada jalur akun dan memastikan akses data autentikasi konsisten.
 
 #### Analisis alur
 
-OWASP menempatkan parameterized query sebagai pertahanan utama. Karena itu, seluruh operasi `SELECT`, `INSERT`, `UPDATE`, dan `DELETE` harus lewat prepared statement.
+OWASP menempatkan parameterized query sebagai pertahanan utama. Karena itu, query akun yang menerima data dari jalur register, login, dan session harus lewat prepared statement.
 
-Prepared statement adalah kontrol utama terhadap SQL injection, tetapi bukan pengganti validasi input. Di dokumen ini keduanya sengaja dipasang berlapis: validasi membatasi bentuk data sejak awal, sedangkan prepared statement memastikan data yang lolos tetap masuk SQL sebagai parameter, bukan sebagai bagian dari struktur query.
+Prepared statement adalah kontrol utama terhadap SQL injection, tetapi bukan pengganti validasi input. Di dokumen ini keduanya sengaja dipasang berlapis: validasi membatasi bentuk data sejak awal, sedangkan prepared statement memastikan data yang lolos tetap masuk SQL sebagai parameter, bukan sebagai bagian dari struktur query. Query rate limit memakai pola prepared statement yang sama dan dijelaskan pada Tahap 12 setelah tabel rate limit sudah tersedia.
 
 #### Referensi
 
@@ -2062,11 +2070,10 @@ Tahap ini tidak menambah referensi internet baru. Setelah helper CSRF, escaping,
 
 #### Penambahan struktur halaman
 
-Pada tahap ini folder presentation dilengkapi dengan view auth dan view hasil. Endpoint publik juga bertambah mengikuti flow browser yang sudah jelas: register, login, welcome, gagal login, dan logout. Asset frontend disiapkan bersamaan karena form sudah mulai dipoles untuk demo browser.
+Pada tahap ini folder presentation hanya dilengkapi dengan view auth dan asset frontend yang diperlukan oleh halaman awal. Endpoint register, login, welcome, gagal login, dan logout dibuat pada tahap masing-masing agar urutan laporan tetap mengikuti urutan implementasi fitur.
 
 ```bash
-touch src/Presentation/AuthViews.php src/Presentation/ResultViews.php
-touch public/register.php public/login.php public/welcome.php public/not-registered.php public/logout.php
+touch src/Presentation/AuthViews.php
 mkdir -p resources public/assets public/vendor scripts
 touch resources/tailwind.css public/styles.css
 touch public/theme.js public/password-validation.js public/page-shell.js public/matrix-rain.js public/favicon.svg
@@ -2259,401 +2266,11 @@ Blok ini membuat tombol submit dengan label yang mengikuti mode form.
 
 Blok ini menutup kartu dengan link untuk berpindah dari register ke login atau sebaliknya.
 
-### Tahap 12 - Menulis endpoint registrasi
-
-#### Tujuan
-
-Membuat akun baru secara aman dan siap dipakai login.
-
-#### Analisis alur
-
-Endpoint register harus memverifikasi method, CSRF, rate limit, validasi input, duplikasi username, lalu baru menyimpan data terenkripsi/terhash.
-
-#### Referensi
-
-Tahap ini tidak mencari sumber baru. Implementasinya langsung memakai hasil bacaan dari tahap session, CSRF, validasi input, enkripsi username, hashing password, dan prepared statement.
-
-#### Implementasi
-
-**Langkah 1:**
-
-- Hentikan request non-POST.
-- Baca input dasar.
-- Verifikasi CSRF.
-- Throttle jalur registrasi sebelum validasi lebih dalam dilakukan.
-
-**Sumber:** [public/register.php:7-11](/home/fxrdhan/au7h/public/register.php:7)
-
-**Alur kode:** request registrasi dipagari dari awal dengan tiga langkah berurutan, yaitu wajib `POST`, baca username mentah, validasi CSRF, lalu aktifkan throttling sebelum logika lain dijalankan.
-
-```php
-require_post_method();
-$submittedUsername = (string) ($_POST['username'] ?? '');
-verify_csrf_or_fail($_POST['csrf_token'] ?? null);
-// Registration throttling is IP-scoped to slow down bulk account creation attempts.
-enforce_auth_rate_limit('register');
-```
-
-**Langkah 2:**
-
-- Validasi username.
-- Validasi password.
-- Validasi konfirmasi password sebagai gerbang pertama sebelum menyentuh database.
-
-**Sumber:** [public/register.php:13-15](/home/fxrdhan/au7h/public/register.php:13)
-
-**Alur kode:** setelah lolos guard awal, input form dipisah menjadi tiga jalur validasi agar username, password, dan konfirmasi password bisa diperiksa dengan pesan error yang tepat.
-
-```php
-$usernameValidation = validate_username($submittedUsername);
-$passwordValidation = validate_password((string) ($_POST['password'] ?? ''));
-$confirmPassword = (string) ($_POST['confirm_password'] ?? '');
-```
-
-**Langkah 3:**
-
-- Cek duplikasi username berdasarkan lookup stabil.
-- Alihkan alur ke form login jika akun ternyata sudah pernah dibuat.
-
-**Sumber:** [public/register.php:33-37](/home/fxrdhan/au7h/public/register.php:33)
-
-**Alur kode:** bila lookup username sudah ditemukan, proses registrasi tidak diteruskan; sistem justru mencatat kegagalan rate limit, menaruh flash message, lalu mengarahkan user ke mode login.
-
-```php
-if (find_user_by_lookup($lookup) !== null) {
-    record_auth_rate_limit_failure('register');
-    set_flash('success', 'Username sudah terdaftar. Silakan login.');
-    redirect_to('/?mode=login');
-}
-```
-
-**Langkah 4:**
-
-- Simpan akun baru jika seluruh pemeriksaan lolos.
-- Bersihkan rate limit register.
-- Kirim flash success ke halaman login.
-
-**Sumber:** [public/register.php:39-52](/home/fxrdhan/au7h/public/register.php:39)
-
-**Alur kode:** pada jalur sukses, username diubah menjadi lookup dan ciphertext, password di-hash, akun disimpan, rate limit dibersihkan, lalu user diarahkan ke halaman login; bila penyimpanan gagal, endpoint jatuh ke response 500.
-
-```php
-try {
-    create_user(
-        $lookup,
-        encrypt_username($username),
-        hash_password_for_storage($password)
-    );
-
-    clear_auth_rate_limit('register');
-    set_flash('success', 'Registrasi berhasil. Silakan login.');
-    redirect_to('/?mode=login');
-} catch (Throwable $exception) {
-    error_log($exception->getMessage());
-    render_page_response(500, render_error_page('Registrasi gagal', 'Server gagal menyimpan akun baru.'));
-}
-```
-
 #### Hasil tahap
 
-Data akun sudah aman di database dan siap dipakai saat login.
+Halaman awal sudah menjadi titik masuk browser-facing yang jelas: user bisa memilih register atau login, form membawa CSRF token, dan asset UI siap dibuild ke image. Endpoint aksi sengaja belum dibahas di tahap ini supaya alur implementasi tidak meloncat ke fitur berikutnya.
 
-### Tahap 13 - Menulis endpoint login
-
-#### Tujuan
-
-Memenuhi requirement login sukses/gagal dengan dua landing page berbeda.
-
-#### Analisis alur
-
-Inilah titik yang dinilai langsung pada tugas. Login harus:
-
-1. hanya menerima `POST`,
-2. mengecek CSRF,
-3. mengecek rate limit,
-4. mencari user via `username_lookup`,
-5. memverifikasi hash password,
-6. mengaktifkan session,
-7. mengarahkan sesuai hasil.
-
-#### Referensi
-
-Referensi yang dicari pada tahap ini adalah PHP `session_regenerate_id()` untuk memastikan session tidak diteruskan mentah setelah autentikasi sukses.
-
-[PHP Manual - session_regenerate_id()](https://www.php.net/manual/en/function.session-regenerate-id.php)
-
-> `session_regenerate_id()` will replace the current session id with a new one, and keep the current session information.
->
-> `delete_old_session`
->
-> Whether to delete the old associated session file or not.
-
-#### Implementasi
-
-**Langkah 1:**
-
-- Paksa jalur login melewati `POST`.
-- Validasi CSRF.
-- Terapkan throttle berbasis kombinasi bucket login dan subject username.
-
-**Sumber:** [public/login.php:7-10](/home/fxrdhan/au7h/public/login.php:7)
-
-**Alur kode:** seperti registrasi, login juga dimulai dari guard berlapis: paksa `POST`, baca username mentah, verifikasi token CSRF, lalu aktifkan throttling berbasis bucket login dan subject username.
-
-```php
-require_post_method();
-$submittedUsername = (string) ($_POST['username'] ?? '');
-verify_csrf_or_fail($_POST['csrf_token'] ?? null);
-enforce_auth_rate_limit('login', $submittedUsername);
-```
-
-**Langkah 2:**
-
-- Cari akun melalui lookup ter-normalisasi.
-- Kirim user ke landing page gagal jika user tidak ditemukan atau password salah.
-
-**Sumber:** [public/login.php:21-27](/home/fxrdhan/au7h/public/login.php:21)
-
-**Alur kode:** username valid lebih dulu diubah menjadi lookup stabil untuk mencari akun, lalu satu kondisi gabungan memutuskan kegagalan jika user tidak ditemukan atau hash password tidak cocok.
-
-```php
-$user = find_user_by_lookup(username_lookup((string) $usernameValidation['value']));
-
-if ($user === null || !verify_stored_password((string) $passwordValidation['value'], (string) $user['password_hash'])) {
-    record_auth_rate_limit_failure('login', $submittedUsername);
-    unset($_SESSION['user_id']);
-    redirect_to('/not-registered.php');
-}
-```
-
-**Langkah 3:**
-
-- Reset rate limit setelah autentikasi sukses.
-- Regenerasi session ID.
-- Rotasi token CSRF.
-- Arahkan user ke halaman welcome.
-
-**Sumber:** [public/login.php:29-34](/home/fxrdhan/au7h/public/login.php:29)
-
-**Alur kode:** jalur sukses mereset throttling, mengganti session ID, menyimpan `user_id` aktif, merotasi token CSRF, lalu mengarahkan browser ke welcome page sebagai akhir autentikasi.
-
-```php
-clear_auth_rate_limit('login', $submittedUsername);
-session_regenerate_id(true);
-$_SESSION['user_id'] = (int) $user['id'];
-regenerate_csrf_token();
-
-redirect_to('/welcome.php');
-```
-
-#### Keputusan penting
-
-1. `session_regenerate_id(true)` dipanggil setelah login untuk mencegah session fixation,
-2. CSRF token dirotasi lagi setelah login,
-3. login gagal langsung menuju landing page “belum terdaftar”.
-
-### Tahap 14 - Menulis landing page sukses dan gagal
-
-#### Tujuan
-
-Menutup acceptance criteria utama yang diminta pada tugas.
-
-#### Analisis alur
-
-Tanpa dua landing page ini, requirement tugas belum lengkap walaupun autentikasi sebenarnya sudah bekerja.
-
-#### Referensi
-
-Tahap ini tidak menambah referensi internet baru. Implementasinya hanya menyambungkan hasil login, guard session, dan kemampuan dekripsi username yang sudah dibangun pada tahap keamanan sebelumnya.
-
-#### Implementasi
-
-**Langkah 1:**
-
-- Panggil guard login lebih dulu di halaman welcome.
-- Dekripsi username agar identitas yang tampil tetap nilai asli, bukan hash atau ciphertext.
-
-**Sumber:** [public/welcome.php:7-14](/home/fxrdhan/au7h/public/welcome.php:7)
-
-**Alur kode:** endpoint ini memastikan user sudah login lebih dulu, lalu mencoba mendekripsi username untuk ditampilkan; jika dekripsi gagal, alur dipindah ke halaman error server.
-
-```php
-$user = require_login();
-
-try {
-    render_page_response(200, render_welcome_page(decrypt_username((string) $user['username_encrypted'])));
-} catch (Throwable $exception) {
-    error_log($exception->getMessage());
-    render_page_response(500, render_error_page('Data akun tidak bisa dibaca', 'Kunci enkripsi untuk username tidak cocok.'));
-}
-```
-
-Akses halaman welcome tetap dijaga oleh helper session agar route ini tidak bisa dibuka tanpa login.
-
-**Langkah 2:**
-
-- Bangun guard session secara terpisah.
-- Gunakan aturan yang sama untuk semua route privat.
-- Hindari pengulangan pengecekan `$_SESSION` mentah.
-
-**Sumber:** [src/Support/Http.php:81](/home/fxrdhan/au7h/src/Support/Http.php:81)
-
-**Alur kode:** `current_user()` membaca `user_id` dari session dan menukarnya menjadi row user nyata, sedangkan `require_login()` memakai hasil itu sebagai guard keras yang me-redirect tamu kembali ke root.
-
-```php
-function current_user(): ?array
-{
-    $userId = $_SESSION['user_id'] ?? null;
-    if (!is_int($userId) && !ctype_digit((string) $userId)) {
-        return null;
-    }
-
-    return find_user_by_id((int) $userId);
-}
-
-function require_login(): array
-{
-    $user = current_user();
-    if ($user === null) {
-        redirect_to('/');
-    }
-
-    return $user;
-}
-```
-
-**Langkah 3:**
-
-- Buat halaman gagal dengan struktur sangat tipis.
-- Sediakan satu respons jelas saat kredensial tidak cocok.
-
-**Sumber:** [public/not-registered.php:7-7](/home/fxrdhan/au7h/public/not-registered.php:7)
-
-**Alur kode:** endpoint ini sengaja tipis karena seluruh keputusan gagal login sudah terjadi sebelumnya; tugasnya tinggal mengembalikan status 401 dengan view gagal yang seragam.
-
-```php
-render_page_response(401, render_not_registered_page());
-```
-
-**Langkah 4:**
-
-- Tampilkan username hasil dekripsi di view welcome.
-- Sediakan form logout yang juga diproteksi CSRF.
-
-**Sumber:** [src/Presentation/ResultViews.php](/home/fxrdhan/au7h/src/Presentation/ResultViews.php:5)
-
-**Alur kode:** view welcome membungkus username yang sudah didekripsi ke shell halaman hasil, lalu menaruh form logout berisi token CSRF agar aksi keluar tetap lewat jalur aman.
-
-```php
-function render_welcome_page(string $username): string
-{
-    $content = render_result_page_shell(
-        '
-          <h1 class="text-4xl font-semibold tracking-tight text-foreground dark:text-white">Welcome, ' . escape_html($username) . '!</h1>
-          <form method="post" action="/logout.php" class="mt-10">
-            <input type="hidden" name="csrf_token" value="' . escape_html(csrf_token()) . '">
-            <button class="inline-flex h-11 items-center justify-center rounded-xl border border-rose-200/80 bg-rose-50 px-5 text-sm font-medium text-rose-700 hover:bg-rose-500 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-300 dark:border-rose-500/35 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500 dark:hover:text-white dark:focus:ring-rose-400/35" type="submit">Logout</button>
-          </form>
-        ',
-        'max-w-2xl'
-    );
-
-    return render_layout('Welcome | Au7h', $content);
-}
-```
-
-**Langkah 5:**
-
-- Tutup requirement dengan pesan gagal login yang eksplisit.
-- Jangan bocorkan detail apakah username atau password yang salah.
-
-**Sumber:** [src/Presentation/ResultViews.php](/home/fxrdhan/au7h/src/Presentation/ResultViews.php:21)
-
-**Alur kode:** view gagal login ini membentuk satu pesan netral yang tidak membocorkan detail kegagalan, lalu menyediakan satu aksi balik ke form sebagai jalur pemulihan user.
-
-```php
-function render_not_registered_page(): string
-{
-    $content = render_result_page_shell('
-          <div class="space-y-4">
-            <h1 class="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">You are not registered yet</h1>
-            <p class="text-sm leading-6 text-muted-foreground">
-              <span class="block">The username or password is incorrect.</span>
-              <span class="block">Try logging in again or create a new account.</span>
-            </p>
-          </div>
-          <div class="mt-8">
-            <a class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200" href="/?mode=register">Back to form</a>
-          </div>
-        ');
-
-    return render_layout('Not Registered Yet', $content);
-}
-```
-
-### Tahap 15 - Menambahkan logout aman
-
-#### Tujuan
-
-Menutup sesi tanpa menyisakan token lama.
-
-#### Analisis alur
-
-Logout sering dianggap sepele, padahal tetap state-changing action. Karena itu, logout juga perlu `POST` dan CSRF.
-
-#### Referensi
-
-Referensi yang dicari pada tahap ini adalah PHP `session_destroy()` dan `session_get_cookie_params()`.
-
-[PHP Manual - session_destroy()](https://www.php.net/manual/en/function.session-destroy.php)
-
-> `session_destroy()` destroys all of the data associated with the current session. It does not unset any of the global variables associated with the session, or unset the session cookie.
->
-> In order to kill the session altogether, the session ID must also be unset. If a cookie is used to propagate the session ID (default behavior), then the session cookie must be deleted.
->
-> `setcookie()` may be used for that.
-
-[PHP Manual - session_get_cookie_params()](https://www.php.net/manual/en/function.session-get-cookie-params.php)
-
-> Gets the session cookie parameters.
->
-> Returns an array with the current session cookie information, the array contains the following items:
->
-> - `"lifetime"` - The lifetime of the cookie in seconds.
-> - `"path"` - The path where information is stored.
-> - `"domain"` - The domain of the cookie.
-> - `"secure"` - The cookie should only be sent over secure connections.
-> - `"httponly"` - The cookie can only be accessed through the HTTP protocol.
-> - `"samesite"` - Controls the cross-domain sending of the cookie.
-
-#### Implementasi
-
-**Langkah 1:**
-
-- Perlakukan logout seperti aksi sensitif lain.
-- Wajibkan `POST`.
-- Wajibkan CSRF valid.
-- Hapus seluruh state session sebelum redirect.
-
-**Sumber:** [public/logout.php:7-17](/home/fxrdhan/au7h/public/logout.php:7)
-
-**Alur kode:** logout dipagari seperti aksi sensitif lain, lalu session dibersihkan dari memori, cookie session lama dihapus bila ada, session dihancurkan, dan browser dipulangkan ke halaman awal.
-
-```php
-require_post_method();
-verify_csrf_or_fail($_POST['csrf_token'] ?? null);
-
-$_SESSION = [];
-if (ini_get('session.use_cookies')) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000, $params['path'], '', true, true);
-}
-session_destroy();
-
-redirect_to('/');
-```
-
-### Tahap 16 - Menambahkan rate limiting login dan register
+### Tahap 12 - Menambahkan rate limiting login dan register
 
 #### Tujuan
 
@@ -2882,6 +2499,433 @@ function enforce_auth_rate_limit(string $bucket, ?string $subject = null): void
 }
 ```
 
+#### Hasil tahap
+
+Rate limiting sekarang sudah tersedia sebelum endpoint register dan login dijelaskan. Dengan begitu, Tahap 13 dan Tahap 14 dapat langsung memakai helper throttling dalam urutan implementasi yang konsisten.
+
+### Tahap 13 - Menulis endpoint registrasi
+
+#### Tujuan
+
+Membuat akun baru secara aman dan siap dipakai login.
+
+#### Analisis alur
+
+Endpoint register harus memverifikasi method, CSRF, rate limit, validasi input, duplikasi username, lalu baru menyimpan data terenkripsi/terhash.
+
+#### Referensi
+
+Tahap ini tidak mencari sumber baru. Implementasinya langsung memakai hasil bacaan dari tahap session, CSRF, validasi input, enkripsi username, hashing password, dan prepared statement.
+
+#### Implementasi
+
+**Langkah 1:**
+
+- Buat endpoint registrasi saat jalur rate limit, validasi, crypto, dan query akun sudah siap.
+- Hentikan request non-POST.
+- Baca input dasar.
+- Verifikasi CSRF.
+- Throttle jalur registrasi sebelum validasi lebih dalam dilakukan.
+
+```bash
+touch public/register.php
+```
+
+**Sumber:** [public/register.php:7-11](/home/fxrdhan/au7h/public/register.php:7)
+
+**Alur kode:** request registrasi dipagari dari awal dengan tiga langkah berurutan, yaitu wajib `POST`, baca username mentah, validasi CSRF, lalu aktifkan throttling sebelum logika lain dijalankan.
+
+```php
+require_post_method();
+$submittedUsername = (string) ($_POST['username'] ?? '');
+verify_csrf_or_fail($_POST['csrf_token'] ?? null);
+// Registration throttling is IP-scoped to slow down bulk account creation attempts.
+enforce_auth_rate_limit('register');
+```
+
+**Langkah 2:**
+
+- Validasi username.
+- Validasi password.
+- Validasi konfirmasi password sebagai gerbang pertama sebelum menyentuh database.
+
+**Sumber:** [public/register.php:13-15](/home/fxrdhan/au7h/public/register.php:13)
+
+**Alur kode:** setelah lolos guard awal, input form dipisah menjadi tiga jalur validasi agar username, password, dan konfirmasi password bisa diperiksa dengan pesan error yang tepat.
+
+```php
+$usernameValidation = validate_username($submittedUsername);
+$passwordValidation = validate_password((string) ($_POST['password'] ?? ''));
+$confirmPassword = (string) ($_POST['confirm_password'] ?? '');
+```
+
+**Langkah 3:**
+
+- Cek duplikasi username berdasarkan lookup stabil.
+- Alihkan alur ke form login jika akun ternyata sudah pernah dibuat.
+
+**Sumber:** [public/register.php:33-37](/home/fxrdhan/au7h/public/register.php:33)
+
+**Alur kode:** bila lookup username sudah ditemukan, proses registrasi tidak diteruskan; sistem justru mencatat kegagalan rate limit, menaruh flash message, lalu mengarahkan user ke mode login.
+
+```php
+if (find_user_by_lookup($lookup) !== null) {
+    record_auth_rate_limit_failure('register');
+    set_flash('success', 'Username sudah terdaftar. Silakan login.');
+    redirect_to('/?mode=login');
+}
+```
+
+**Langkah 4:**
+
+- Simpan akun baru jika seluruh pemeriksaan lolos.
+- Bersihkan rate limit register.
+- Kirim flash success ke halaman login.
+
+**Sumber:** [public/register.php:39-52](/home/fxrdhan/au7h/public/register.php:39)
+
+**Alur kode:** pada jalur sukses, username diubah menjadi lookup dan ciphertext, password di-hash, akun disimpan, rate limit dibersihkan, lalu user diarahkan ke halaman login; bila penyimpanan gagal, endpoint jatuh ke response 500.
+
+```php
+try {
+    create_user(
+        $lookup,
+        encrypt_username($username),
+        hash_password_for_storage($password)
+    );
+
+    clear_auth_rate_limit('register');
+    set_flash('success', 'Registrasi berhasil. Silakan login.');
+    redirect_to('/?mode=login');
+} catch (Throwable $exception) {
+    error_log($exception->getMessage());
+    render_page_response(500, render_error_page('Registrasi gagal', 'Server gagal menyimpan akun baru.'));
+}
+```
+
+#### Hasil tahap
+
+Data akun sudah aman di database dan siap dipakai saat login.
+
+### Tahap 14 - Menulis endpoint login
+
+#### Tujuan
+
+Memenuhi requirement login sukses/gagal dengan dua landing page berbeda.
+
+#### Analisis alur
+
+Inilah titik yang dinilai langsung pada tugas. Login harus:
+
+1. hanya menerima `POST`,
+2. mengecek CSRF,
+3. mengecek rate limit,
+4. mencari user via `username_lookup`,
+5. memverifikasi hash password,
+6. mengaktifkan session,
+7. mengarahkan sesuai hasil.
+
+#### Referensi
+
+Referensi yang dicari pada tahap ini adalah PHP `session_regenerate_id()` untuk memastikan session tidak diteruskan mentah setelah autentikasi sukses.
+
+[PHP Manual - session_regenerate_id()](https://www.php.net/manual/en/function.session-regenerate-id.php)
+
+> `session_regenerate_id()` will replace the current session id with a new one, and keep the current session information.
+>
+> `delete_old_session`
+>
+> Whether to delete the old associated session file or not.
+
+#### Implementasi
+
+**Langkah 1:**
+
+- Buat endpoint login setelah rate limiter dan query akun siap dipakai.
+- Paksa jalur login melewati `POST`.
+- Validasi CSRF.
+- Terapkan throttle berbasis kombinasi bucket login dan subject username.
+
+```bash
+touch public/login.php
+```
+
+**Sumber:** [public/login.php:7-10](/home/fxrdhan/au7h/public/login.php:7)
+
+**Alur kode:** seperti registrasi, login juga dimulai dari guard berlapis: paksa `POST`, baca username mentah, verifikasi token CSRF, lalu aktifkan throttling berbasis bucket login dan subject username.
+
+```php
+require_post_method();
+$submittedUsername = (string) ($_POST['username'] ?? '');
+verify_csrf_or_fail($_POST['csrf_token'] ?? null);
+enforce_auth_rate_limit('login', $submittedUsername);
+```
+
+**Langkah 2:**
+
+- Cari akun melalui lookup ter-normalisasi.
+- Kirim user ke landing page gagal jika user tidak ditemukan atau password salah.
+
+**Sumber:** [public/login.php:21-27](/home/fxrdhan/au7h/public/login.php:21)
+
+**Alur kode:** username valid lebih dulu diubah menjadi lookup stabil untuk mencari akun, lalu satu kondisi gabungan memutuskan kegagalan jika user tidak ditemukan atau hash password tidak cocok.
+
+```php
+$user = find_user_by_lookup(username_lookup((string) $usernameValidation['value']));
+
+if ($user === null || !verify_stored_password((string) $passwordValidation['value'], (string) $user['password_hash'])) {
+    record_auth_rate_limit_failure('login', $submittedUsername);
+    unset($_SESSION['user_id']);
+    redirect_to('/not-registered.php');
+}
+```
+
+**Langkah 3:**
+
+- Reset rate limit setelah autentikasi sukses.
+- Regenerasi session ID.
+- Rotasi token CSRF.
+- Arahkan user ke halaman welcome.
+
+**Sumber:** [public/login.php:29-34](/home/fxrdhan/au7h/public/login.php:29)
+
+**Alur kode:** jalur sukses mereset throttling, mengganti session ID, menyimpan `user_id` aktif, merotasi token CSRF, lalu mengarahkan browser ke welcome page sebagai akhir autentikasi.
+
+```php
+clear_auth_rate_limit('login', $submittedUsername);
+session_regenerate_id(true);
+$_SESSION['user_id'] = (int) $user['id'];
+regenerate_csrf_token();
+
+redirect_to('/welcome.php');
+```
+
+#### Keputusan penting
+
+1. `session_regenerate_id(true)` dipanggil setelah login untuk mencegah session fixation,
+2. CSRF token dirotasi lagi setelah login,
+3. login gagal langsung menuju landing page “belum terdaftar”.
+
+### Tahap 15 - Menulis landing page sukses dan gagal
+
+#### Tujuan
+
+Menutup acceptance criteria utama yang diminta pada tugas.
+
+#### Analisis alur
+
+Tanpa dua landing page ini, requirement tugas belum lengkap walaupun autentikasi sebenarnya sudah bekerja.
+
+#### Referensi
+
+Tahap ini tidak menambah referensi internet baru. Implementasinya hanya menyambungkan hasil login, guard session, dan kemampuan dekripsi username yang sudah dibangun pada tahap keamanan sebelumnya.
+
+#### Implementasi
+
+**Langkah 1:**
+
+- Buat endpoint hasil dan view hasil setelah alur login sukses/gagal jelas.
+- Panggil guard login lebih dulu di halaman welcome.
+- Dekripsi username agar identitas yang tampil tetap nilai asli, bukan hash atau ciphertext.
+
+```bash
+touch src/Presentation/ResultViews.php
+touch public/welcome.php public/not-registered.php
+```
+
+**Sumber:** [public/welcome.php:7-14](/home/fxrdhan/au7h/public/welcome.php:7)
+
+**Alur kode:** endpoint ini memastikan user sudah login lebih dulu, lalu mencoba mendekripsi username untuk ditampilkan; jika dekripsi gagal, alur dipindah ke halaman error server.
+
+```php
+$user = require_login();
+
+try {
+    render_page_response(200, render_welcome_page(decrypt_username((string) $user['username_encrypted'])));
+} catch (Throwable $exception) {
+    error_log($exception->getMessage());
+    render_page_response(500, render_error_page('Data akun tidak bisa dibaca', 'Kunci enkripsi untuk username tidak cocok.'));
+}
+```
+
+Akses halaman welcome tetap dijaga oleh helper session agar route ini tidak bisa dibuka tanpa login.
+
+**Langkah 2:**
+
+- Bangun guard session secara terpisah.
+- Gunakan aturan yang sama untuk semua route privat.
+- Hindari pengulangan pengecekan `$_SESSION` mentah.
+
+**Sumber:** [src/Support/Http.php:81](/home/fxrdhan/au7h/src/Support/Http.php:81)
+
+**Alur kode:** `current_user()` membaca `user_id` dari session dan menukarnya menjadi row user nyata, sedangkan `require_login()` memakai hasil itu sebagai guard keras yang me-redirect tamu kembali ke root.
+
+```php
+function current_user(): ?array
+{
+    $userId = $_SESSION['user_id'] ?? null;
+    if (!is_int($userId) && !ctype_digit((string) $userId)) {
+        return null;
+    }
+
+    return find_user_by_id((int) $userId);
+}
+
+function require_login(): array
+{
+    $user = current_user();
+    if ($user === null) {
+        redirect_to('/');
+    }
+
+    return $user;
+}
+```
+
+**Langkah 3:**
+
+- Buat halaman gagal dengan struktur sangat tipis.
+- Sediakan satu respons jelas saat kredensial tidak cocok.
+
+**Sumber:** [public/not-registered.php:7-7](/home/fxrdhan/au7h/public/not-registered.php:7)
+
+**Alur kode:** endpoint ini sengaja tipis karena seluruh keputusan gagal login sudah terjadi sebelumnya; tugasnya tinggal mengembalikan status 401 dengan view gagal yang seragam.
+
+```php
+render_page_response(401, render_not_registered_page());
+```
+
+**Langkah 4:**
+
+- Tampilkan username hasil dekripsi di view welcome.
+- Sediakan form logout yang juga diproteksi CSRF.
+
+**Sumber:** [src/Presentation/ResultViews.php](/home/fxrdhan/au7h/src/Presentation/ResultViews.php:5)
+
+**Alur kode:** view welcome membungkus username yang sudah didekripsi ke shell halaman hasil, lalu menaruh form logout berisi token CSRF agar aksi keluar tetap lewat jalur aman.
+
+```php
+function render_welcome_page(string $username): string
+{
+    $content = render_result_page_shell(
+        '
+          <h1 class="text-4xl font-semibold tracking-tight text-foreground dark:text-white">Welcome, ' . escape_html($username) . '!</h1>
+          <form method="post" action="/logout.php" class="mt-10">
+            <input type="hidden" name="csrf_token" value="' . escape_html(csrf_token()) . '">
+            <button class="inline-flex h-11 items-center justify-center rounded-xl border border-rose-200/80 bg-rose-50 px-5 text-sm font-medium text-rose-700 hover:bg-rose-500 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-300 dark:border-rose-500/35 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500 dark:hover:text-white dark:focus:ring-rose-400/35" type="submit">Logout</button>
+          </form>
+        ',
+        'max-w-2xl'
+    );
+
+    return render_layout('Welcome | Au7h', $content);
+}
+```
+
+**Langkah 5:**
+
+- Tutup requirement dengan pesan gagal login yang eksplisit.
+- Jangan bocorkan detail apakah username atau password yang salah.
+
+**Sumber:** [src/Presentation/ResultViews.php](/home/fxrdhan/au7h/src/Presentation/ResultViews.php:21)
+
+**Alur kode:** view gagal login ini membentuk satu pesan netral yang tidak membocorkan detail kegagalan, lalu menyediakan satu aksi balik ke form sebagai jalur pemulihan user.
+
+```php
+function render_not_registered_page(): string
+{
+    $content = render_result_page_shell('
+          <div class="space-y-4">
+            <h1 class="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">You are not registered yet</h1>
+            <p class="text-sm leading-6 text-muted-foreground">
+              <span class="block">The username or password is incorrect.</span>
+              <span class="block">Try logging in again or create a new account.</span>
+            </p>
+          </div>
+          <div class="mt-8">
+            <a class="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-900 px-5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-200" href="/?mode=register">Back to form</a>
+          </div>
+        ');
+
+    return render_layout('Not Registered Yet', $content);
+}
+```
+
+#### Hasil tahap
+
+Flow hasil login sudah lengkap: login sukses masuk ke halaman welcome yang menampilkan username asli hasil dekripsi, login gagal masuk ke halaman gagal yang tidak membocorkan detail credential, dan route privat tetap dijaga oleh session.
+
+### Tahap 16 - Menambahkan logout aman
+
+#### Tujuan
+
+Menutup sesi tanpa menyisakan token lama.
+
+#### Analisis alur
+
+Logout sering dianggap sepele, padahal tetap state-changing action. Karena itu, logout juga perlu `POST` dan CSRF.
+
+#### Referensi
+
+Referensi yang dicari pada tahap ini adalah PHP `session_destroy()` dan `session_get_cookie_params()`.
+
+[PHP Manual - session_destroy()](https://www.php.net/manual/en/function.session-destroy.php)
+
+> `session_destroy()` destroys all of the data associated with the current session. It does not unset any of the global variables associated with the session, or unset the session cookie.
+>
+> In order to kill the session altogether, the session ID must also be unset. If a cookie is used to propagate the session ID (default behavior), then the session cookie must be deleted.
+>
+> `setcookie()` may be used for that.
+
+[PHP Manual - session_get_cookie_params()](https://www.php.net/manual/en/function.session-get-cookie-params.php)
+
+> Gets the session cookie parameters.
+>
+> Returns an array with the current session cookie information, the array contains the following items:
+>
+> - `"lifetime"` - The lifetime of the cookie in seconds.
+> - `"path"` - The path where information is stored.
+> - `"domain"` - The domain of the cookie.
+> - `"secure"` - The cookie should only be sent over secure connections.
+> - `"httponly"` - The cookie can only be accessed through the HTTP protocol.
+> - `"samesite"` - Controls the cross-domain sending of the cookie.
+
+#### Implementasi
+
+**Langkah 1:**
+
+- Buat endpoint logout setelah halaman welcome menyediakan form keluar.
+- Perlakukan logout seperti aksi sensitif lain.
+- Wajibkan `POST`.
+- Wajibkan CSRF valid.
+- Hapus seluruh state session sebelum redirect.
+
+```bash
+touch public/logout.php
+```
+
+**Sumber:** [public/logout.php:7-17](/home/fxrdhan/au7h/public/logout.php:7)
+
+**Alur kode:** logout dipagari seperti aksi sensitif lain, lalu session dibersihkan dari memori, cookie session lama dihapus bila ada, session dihancurkan, dan browser dipulangkan ke halaman awal.
+
+```php
+require_post_method();
+verify_csrf_or_fail($_POST['csrf_token'] ?? null);
+
+$_SESSION = [];
+if (ini_get('session.use_cookies')) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000, $params['path'], '', true, true);
+}
+session_destroy();
+
+redirect_to('/');
+```
+
+#### Hasil tahap
+
+Siklus session sekarang punya akhir yang eksplisit: logout hanya bisa lewat `POST` dengan CSRF valid, cookie session lama dihapus, data session dihancurkan, dan user dikembalikan ke halaman awal.
+
 ### Tahap 17 - Menyiapkan Docker Compose untuk development dan demo
 
 #### Tujuan
@@ -3095,9 +3139,7 @@ Menjawab tambahan requirement jaringan: traffic aplikasi dipantau oleh Snort, ru
 
 #### Analisis alur
 
-Snort diposisikan sebagai IDS sidecar, bukan menggantikan Apache atau MySQL. ACL dipasang di container aplikasi agar browser tetap bisa mengakses HTTP/HTTPS, sementara port sensitif seperti MySQL dan SSH tidak terbuka langsung ke user.
-
-Bagian ini tidak mengubah keputusan satu container untuk aplikasi utama. Container `app` tetap menjadi tempat Apache, PHP, dan MySQL berjalan bersama. Snort dibuat sebagai sidecar karena IDS jaringan perlu proses dan image khusus, tetapi ia hanya menempel pada network namespace `app` untuk memantau traffic yang sama, bukan menjadi container database atau web server terpisah.
+Snort diposisikan sebagai IDS sidecar yang menempel ke network namespace `app`, sedangkan Apache, PHP, dan MySQL tetap berada di container aplikasi utama. ACL dipasang di container aplikasi agar browser tetap bisa mengakses HTTP/HTTPS, sementara port sensitif seperti MySQL dan SSH tidak terbuka langsung ke user.
 
 #### Referensi
 
@@ -3764,7 +3806,7 @@ Menutup celah dokumentasi tentang privilege container, capability jaringan, pemb
 
 ACL container membutuhkan `iptables`, sedangkan `iptables` membutuhkan capability jaringan. Snort juga membutuhkan akses packet capture. Karena itu, bagian ini tidak boleh dibiarkan hanya sebagai baris YAML; evaluator perlu melihat bahwa privilege tinggi ini disadari, capability default Docker tidak diterima utuh, dan privilege yang masih tersisa dibatasi sesuai kebutuhan demo.
 
-Ada empat keputusan privilege yang penting:
+Ada lima keputusan privilege yang penting:
 
 1. container `app` melakukan `cap_drop: ALL`, lalu menambahkan ulang `CHOWN`, `DAC_OVERRIDE`, `NET_ADMIN`, `SETGID`, dan `SETUID`,
 2. service `snort` melakukan `cap_drop: ALL`, lalu menambahkan ulang `DAC_OVERRIDE`, `NET_ADMIN`, dan `NET_RAW` agar binary Snort resmi tetap bisa dieksekusi dan traffic network namespace aplikasi bisa dibaca,
@@ -3927,25 +3969,11 @@ trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
 
 Scan awal menemukan `1` vulnerability severity `HIGH` dan `0` vulnerability severity `CRITICAL` pada image `au7h` berbasis Ubuntu 25.10. Temuan berada pada paket `gpgv` dengan CVE `CVE-2025-68973`; statusnya `fixed`, versi terpasang `2.4.8-2ubuntu2`, dan fixed version `2.4.8-2ubuntu2.1`. Pemeriksaan `apt-cache policy gpgv` menunjukkan fixed version tersebut sudah tersedia sebagai candidate package dari repository Ubuntu.
 
-Perbaikan dilakukan dengan memasukkan `gpgv` secara eksplisit ke daftar package runtime yang di-install saat build image. Detail perubahan `Dockerfile` ditunjukkan pada bukti proses di bawah.
+Perbaikan dilakukan dengan memasukkan `gpgv` secara eksplisit ke daftar package runtime yang di-install saat build image. Bukti visual scan awal, pengecekan candidate package, rebuild, verifikasi versi fixed, dan scan ulang dipusatkan pada Uji 18 agar bukti supply-chain tidak tersebar di dua tempat.
 
 Setelah image dibuild ulang dengan `docker build --pull --no-cache -t au7h .`, package `gpgv` terpasang sebagai versi fixed `2.4.8-2ubuntu2.1`. Scan ulang Trivy kemudian menunjukkan `0` vulnerability untuk severity `HIGH` dan `CRITICAL`. Scan vulnerability ini tetap dicatat sebagai pengujian manual, belum sebagai gate wajib di workflow CI.
 
-#### Bukti proses perbaikan
-
-![Build image dan sumber supply-chain](assets/screenshots/16-build-image-supply-chain.png)
-
-Gambar ini menunjukkan `docker compose -f compose.dev.yaml up -d --build` berhasil membangun image `au7h`. Output build juga memperlihatkan sumber image builder `oven/bun:1.3.6`, runtime `ubuntu:25.10`, penggunaan `.dockerignore`, `bun install --frozen-lockfile`, dan container `app` serta `snort` berhasil start.
-
-![Scan awal Trivy menemukan gpgv](assets/screenshots/22-trivy-scan-result.png)
-
-Gambar ini menunjukkan scan awal `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h`. Hasilnya menemukan `1` vulnerability severity `HIGH` dan `0` severity `CRITICAL` pada image `au7h (ubuntu 25.10)`, yaitu `CVE-2025-68973` pada paket `gpgv`. Tabel Trivy menunjukkan versi yang terpasang masih `2.4.8-2ubuntu2`, sedangkan fixed version yang tersedia adalah `2.4.8-2ubuntu2.1`.
-
-![Candidate fixed package gpgv sebelum rebuild](assets/screenshots/24-gpgv-candidate-before-fix.png)
-
-Gambar ini menunjukkan `apt-cache policy gpgv` sebelum perbaikan image. Output memperlihatkan `Installed: 2.4.8-2ubuntu2`, sedangkan `Candidate: 2.4.8-2ubuntu2.1`, sehingga fixed package sudah tersedia dari repository Ubuntu dan bisa dipasang saat image dibuild ulang.
-
-Setelah candidate fixed terlihat, `Dockerfile` diedit dengan menambahkan `gpgv` ke daftar package runtime. Bagian ini menjadi kunci perbaikan karena package yang rentan tidak hanya dicek versinya, tetapi juga diminta ulang oleh `apt-get install` saat build image.
+Perubahan `Dockerfile` yang menjadi kunci perbaikan:
 
 **Sumber:** [Dockerfile:16](/home/fxrdhan/au7h/Dockerfile:16)
 
@@ -3957,14 +3985,6 @@ RUN apt-get update \
     gpgv \
     iptables \
 ```
-
-![Build ulang image dengan package gpgv](assets/screenshots/25-rebuild-with-gpgv-fixed.png)
-
-Gambar ini menunjukkan `docker build --pull --no-cache -t au7h .` setelah `Dockerfile` diperbarui. Pada langkah `apt-get install`, package `gpgv` sudah masuk daftar package runtime.
-
-![Versi fixed gpgv sudah terpasang](assets/screenshots/27-gpgv-fixed-version-installed.png)
-
-Gambar ini menunjukkan verifikasi package setelah rebuild. Output `apt-cache policy gpgv` memperlihatkan `Installed` dan `Candidate` sama-sama berada pada versi `2.4.8-2ubuntu2.1`, sehingga image yang dipakai sudah menggunakan versi fixed untuk temuan `CVE-2025-68973`.
 
 #### Hasil tahap
 
@@ -4255,15 +4275,11 @@ docker container inspect --format '{{json .State.Health}}' au7h-app-1
 
 Yang ditunjukkan:
 
-1. `app` melakukan `cap_drop: ALL` lalu menambahkan ulang `CHOWN`, `DAC_OVERRIDE`, `NET_ADMIN`, `SETGID`, dan `SETUID`,
-2. `snort` melakukan `cap_drop: ALL` lalu menambahkan ulang `DAC_OVERRIDE`, `NET_ADMIN`, dan `NET_RAW`,
-3. `no-new-privileges:true` aktif pada kedua service,
-4. root filesystem `snort` read-only dengan log tetap di volume,
-5. tidak ada `privileged: true`,
-6. image dan dependency build dibaca dari tag/lockfile yang jelas,
-7. `snort3:latest`, digest pinning, dan vulnerability scan dijelaskan sebagai batasan transparan,
-8. secret runtime berada di volume data dan tidak masuk Git/build context,
-9. healthcheck container tersedia dan dapat dibaca dari state Docker.
+1. konfigurasi privilege `app` dan `snort` sesuai ringkasan Tahap 21,
+2. tidak ada `privileged: true` dan `no-new-privileges:true` aktif,
+3. image serta dependency build berasal dari tag/lockfile yang jelas,
+4. secret runtime berada di volume data dan tidak masuk Git/build context,
+5. healthcheck container tersedia dan dapat dibaca dari state Docker.
 
 ## 6. Urutan Verifikasi Setelah Implementasi
 
@@ -4601,15 +4617,12 @@ sed -n '1,220p' docker-entrypoint.sh
 
 Yang harus terlihat:
 
-1. service `app` memiliki `cap_drop: ALL`,
-2. service `app` hanya menambahkan ulang `CHOWN`, `DAC_OVERRIDE`, `NET_ADMIN`, `SETGID`, dan `SETUID`,
-3. service `snort` memiliki `cap_drop: ALL`,
-4. service `snort` hanya menambahkan ulang `DAC_OVERRIDE`, `NET_ADMIN`, dan `NET_RAW`,
-5. kedua service memakai `security_opt: no-new-privileges:true`,
-6. service `snort` memakai `read_only: true` dan `tmpfs` untuk `/tmp`,
-7. tidak ada `privileged: true`,
-8. MySQL dijalankan dengan `--user=mysql`,
-9. alasan capability dicatat sebagai kebutuhan bootstrap, `iptables`, dan packet capture, bukan default produksi.
+1. `app` dan `snort` menjatuhkan capability default dengan `cap_drop: ALL`,
+2. capability yang ditambahkan ulang cocok dengan daftar dan alasan pada Tahap 21,
+3. kedua service memakai `security_opt: no-new-privileges:true`,
+4. service `snort` memakai `read_only: true` dan `tmpfs` untuk `/tmp`,
+5. tidak ada `privileged: true`,
+6. MySQL dijalankan dengan `--user=mysql`.
 
 #### Bukti visual Uji 17
 
@@ -4650,6 +4663,26 @@ trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h
 ```
 
 #### Bukti visual Uji 18
+
+![Build image dan sumber supply-chain](assets/screenshots/16-build-image-supply-chain.png)
+
+Gambar ini menunjukkan `docker compose -f compose.dev.yaml up -d --build` berhasil membangun image `au7h`. Output build juga memperlihatkan sumber image builder `oven/bun:1.3.6`, runtime `ubuntu:25.10`, penggunaan `.dockerignore`, `bun install --frozen-lockfile`, dan container `app` serta `snort` berhasil start.
+
+![Scan awal Trivy menemukan gpgv](assets/screenshots/22-trivy-scan-result.png)
+
+Gambar ini menunjukkan scan awal `trivy image --scanners vuln --severity HIGH,CRITICAL --timeout 20m au7h`. Hasilnya menemukan `1` vulnerability severity `HIGH` dan `0` severity `CRITICAL` pada image `au7h (ubuntu 25.10)`, yaitu `CVE-2025-68973` pada paket `gpgv`. Tabel Trivy menunjukkan versi yang terpasang masih `2.4.8-2ubuntu2`, sedangkan fixed version yang tersedia adalah `2.4.8-2ubuntu2.1`.
+
+![Candidate fixed package gpgv sebelum rebuild](assets/screenshots/24-gpgv-candidate-before-fix.png)
+
+Gambar ini menunjukkan `apt-cache policy gpgv` sebelum perbaikan image. Output memperlihatkan `Installed: 2.4.8-2ubuntu2`, sedangkan `Candidate: 2.4.8-2ubuntu2.1`, sehingga fixed package sudah tersedia dari repository Ubuntu dan bisa dipasang saat image dibuild ulang.
+
+![Build ulang image dengan package gpgv](assets/screenshots/25-rebuild-with-gpgv-fixed.png)
+
+Gambar ini menunjukkan `docker build --pull --no-cache -t au7h .` setelah `Dockerfile` diperbarui. Pada langkah `apt-get install`, package `gpgv` sudah masuk daftar package runtime.
+
+![Versi fixed gpgv sudah terpasang](assets/screenshots/27-gpgv-fixed-version-installed.png)
+
+Gambar ini menunjukkan verifikasi package setelah rebuild. Output `apt-cache policy gpgv` memperlihatkan `Installed` dan `Candidate` sama-sama berada pada versi `2.4.8-2ubuntu2.1`, sehingga image yang dipakai sudah menggunakan versi fixed untuk temuan `CVE-2025-68973`.
 
 ![Scan ulang Trivy setelah update gpgv](assets/screenshots/26-trivy-clean-after-gpgv-update.png)
 
@@ -4752,16 +4785,16 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | Satu container web server + database | Tahap 1, 2, 3 |
 | Bisa diakses browser | Tahap 4, 17 |
 | Form login dan register | Tahap 11 |
-| Minimal harus bisa login | Tahap 12, 13, 14 |
-| Login sukses ke welcome + username | Tahap 13, 14 |
-| Login gagal ke belum terdaftar | Tahap 13, 14 |
+| Minimal harus bisa login | Tahap 13, 14, 15 |
+| Login sukses ke welcome + username | Tahap 14, 15 |
+| Login gagal ke belum terdaftar | Tahap 14, 15 |
 | HTTPS | Tahap 4 |
 | Algoritma enkripsi web server boleh default | Tahap 1, 3, 4 |
-| Integritas form | Tahap 9, 12, 13, 15, 19 |
+| Integritas form | Tahap 9, 11, 13, 14, 16, 19 |
 | Privasi data di database | Tahap 8, 9, 19, 20, 23 |
 | Buffer overflow | Tahap 6 + pilihan stack pada Tahap 1 + Decision Log 3.4 + Tahap 19 |
 | SQL injection | Tahap 10, 19 |
-| XSS | Tahap 5, 9, 11, 14, 19 |
+| XSS | Tahap 5, 9, 11, 15, 19 |
 | Snort IDS + rule lokal | Tahap 18 |
 | ACL ICMP dan port | Tahap 18, 21 |
 | Test keamanan otomatis | Tahap 19 |
@@ -4787,71 +4820,7 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 12. Image utama memakai tag versi/rilis dan dependency memakai lockfile frozen, tetapi belum semua image dipin ke digest. `ciscotalos/snort3:latest` tetap dicatat sebagai tradeoff demo. Scan Trivy dilakukan manual dan belum menjadi gate wajib di workflow CI.
 13. User database aplikasi mendapat `GRANT ALL PRIVILEGES` pada database aplikasi agar bootstrap schema demo bisa otomatis. Untuk produksi, hak runtime sebaiknya dipersempit dan dipisah dari user migration.
 
-## 9. Checklist Final Sebelum Presentasi
-
-Catatan pembacaan: checklist ini dipakai sebagai pemeriksaan terakhir tepat sebelum demo, supaya tidak ada requirement yang tertinggal saat presentasi berlangsung.
-
-```text
-[x] docker compose up berhasil
-[x] http:// redirect ke https://
-[x] form register tampil
-[x] form login tampil
-[x] register sukses
-[x] login sukses
-[x] login gagal menuju halaman belum terdaftar
-[x] welcome page menampilkan username
-[x] logout berhasil
-[x] CSRF token divalidasi
-[x] session cookie secure + httponly + samesite
-[x] password hash Argon2id
-[x] username terenkripsi
-[x] lookup username via HMAC
-[x] prepared statement aktif
-[x] emulate prepares dimatikan
-[x] payload SQL injection tidak membypass login
-[x] CSP aktif
-[x] input validation aktif
-[x] payload XSS ditolak atau di-escape
-[x] oversized username/password ditolak
-[x] rate limiting aktif
-[x] file upload dimatikan
-[x] ukuran POST dibatasi
-[x] batas satu container app vs Snort sidecar dijelaskan
-[x] sertifikat self-signed untuk demo lokal dijelaskan
-[x] Snort service aktif
-[x] au7h.rules memuat local.rules dan community.rules
-[x] local.rules memuat ICMP, HTTP/HTTPS, MySQL, dan SSH
-[x] snort:test-rules berhasil
-[x] Snort alert HTTP/HTTPS muncul di alert_fast.txt
-[x] acl:status menampilkan chain AU7H_INPUT
-[x] HTTP/HTTPS diizinkan ACL
-[x] MySQL 3306 dan SSH 22 ditolak ACL
-[x] test helper keamanan otomatis tersedia
-[x] test mencakup validasi input, CSRF termasuk token kosong/format rusak, HMAC, enkripsi username, hash password, dan rate limit
-[x] .gitignore mengecualikan data runtime dan certs lokal
-[x] .dockerignore mengecualikan data, certs, .git, .github, docs, dan cache lokal
-[x] CI menjalankan PHP syntax lint
-[x] CI menjalankan test helper keamanan
-[x] CI membangun Docker image dari build context yang dibatasi
-[x] threat model containering dan security dipetakan ke tahap implementasi
-[x] capability default app dan Snort di-drop lewat cap_drop ALL
-[x] capability app dan Snort ditambahkan ulang secara eksplisit beserta alasannya
-[x] no-new-privileges aktif pada app dan Snort
-[x] root filesystem Snort read-only dan log tetap memakai volume
-[x] tidak ada klaim bahwa capability tinggi adalah pola produksi ideal
-[x] supply-chain image dan dependency dicatat transparan
-[x] lockfile dependency dipakai dengan frozen install
-[x] Trivy scan manual awal menemukan 1 HIGH pada gpgv dan temuannya dicatat
-[x] Dockerfile meng-upgrade gpgv ke fixed version saat rebuild image
-[x] Trivy scan ulang setelah rebuild menunjukkan 0 HIGH/CRITICAL
-[x] status digest pinning dan CI vulnerability gate tidak dibesar-besarkan
-[x] lifecycle secret runtime dijelaskan
-[x] privilege database aplikasi dijelaskan sebagai tradeoff bootstrap demo
-[x] Dockerfile memiliki HEALTHCHECK internal ke endpoint HTTPS lokal
-[x] script healthcheck valid secara sintaks
-```
-
-## 10. Ringkasan Strategi Dari Nol
+## 9. Ringkasan Strategi Dari Nol
 
 Strategi pembangunan yang paling aman dan paling mudah dipertanggungjawabkan untuk tugas ini adalah:
 
@@ -4860,8 +4829,8 @@ Strategi pembangunan yang paling aman dan paling mudah dipertanggungjawabkan unt
 3. lakukan riset internet per kontrol keamanan,
 4. pilih arsitektur yang paling sederhana namun tetap aman,
 5. bangun satu container yang bisa bootstrap sendiri,
-6. implementasikan login/register paling kecil dulu,
-7. pasang proteksi CSRF, session, hashing, enkripsi, SQLi, XSS, dan rate limit,
+6. siapkan proteksi CSRF, session, hashing, enkripsi, SQLi, XSS, dan rate limit,
+7. implementasikan login/register di atas helper yang sudah siap,
 8. tambahkan Snort IDS dan ACL untuk kontrol jaringan,
 9. tambahkan test otomatis untuk helper keamanan yang paling rawan regresi,
 10. amankan hygiene repo agar data runtime dan private key lokal tidak ikut Git atau build context,
@@ -4872,7 +4841,7 @@ Strategi pembangunan yang paling aman dan paling mudah dipertanggungjawabkan unt
 
 Urutan ini menghasilkan proyek yang tidak hanya “jalan”, tetapi juga mudah dijelaskan saat alasan teknisnya perlu dipertanggungjawabkan di sesi evaluasi.
 
-## 11. Struktur Akhir Proyek
+## 10. Struktur Akhir Proyek
 
 Bagian ini menunjukkan susunan repositori pada kondisi akhir proyek. Susunannya memisahkan area yang boleh diakses browser, area logika aplikasi, area hardening container, pengujian, dan monitoring jaringan.
 
@@ -4996,3 +4965,67 @@ Referensi berikut dipakai untuk menguatkan prinsip desain yang memang diterapkan
 > The twelve-factor app stores config in environment variables (often shortened to env vars or env).
 
 Dengan tiga referensi ini, maka pemisahan folder dilakukan sesuai kebutuhan masing-masing. `public/` dipilih untuk membatasi permukaan akses browser, `src/` dipisah agar data, tampilan, dan controlling logic tidak bercampur, `docker/` dipisah agar hardening server dan runtime container tidak masuk ke logika aplikasi, dan konfigurasi deploy tetap diambil dari environment variable alih-alih ditanam sebagai konstanta kode.
+
+## 11. Checklist Final Sebelum Presentasi
+
+Catatan pembacaan: checklist ini dipakai sebagai pemeriksaan terakhir tepat sebelum demo, supaya tidak ada requirement yang tertinggal saat presentasi berlangsung.
+
+```text
+[x] docker compose up berhasil
+[x] http:// redirect ke https://
+[x] form register tampil
+[x] form login tampil
+[x] register sukses
+[x] login sukses
+[x] login gagal menuju halaman belum terdaftar
+[x] welcome page menampilkan username
+[x] logout berhasil
+[x] CSRF token divalidasi
+[x] session cookie secure + httponly + samesite
+[x] password hash Argon2id
+[x] username terenkripsi
+[x] lookup username via HMAC
+[x] prepared statement aktif
+[x] emulate prepares dimatikan
+[x] payload SQL injection tidak membypass login
+[x] CSP aktif
+[x] input validation aktif
+[x] payload XSS ditolak atau di-escape
+[x] oversized username/password ditolak
+[x] rate limiting aktif
+[x] file upload dimatikan
+[x] ukuran POST dibatasi
+[x] batas satu container app vs Snort sidecar dijelaskan
+[x] sertifikat self-signed untuk demo lokal dijelaskan
+[x] Snort service aktif
+[x] au7h.rules memuat local.rules dan community.rules
+[x] local.rules memuat ICMP, HTTP/HTTPS, MySQL, dan SSH
+[x] snort:test-rules berhasil
+[x] Snort alert HTTP/HTTPS muncul di alert_fast.txt
+[x] acl:status menampilkan chain AU7H_INPUT
+[x] HTTP/HTTPS diizinkan ACL
+[x] MySQL 3306 dan SSH 22 ditolak ACL
+[x] test helper keamanan otomatis tersedia
+[x] test mencakup validasi input, CSRF termasuk token kosong/format rusak, HMAC, enkripsi username, hash password, dan rate limit
+[x] .gitignore mengecualikan data runtime dan certs lokal
+[x] .dockerignore mengecualikan data, certs, .git, .github, docs, dan cache lokal
+[x] CI menjalankan PHP syntax lint
+[x] CI menjalankan test helper keamanan
+[x] CI membangun Docker image dari build context yang dibatasi
+[x] threat model containering dan security dipetakan ke tahap implementasi
+[x] capability default app dan Snort di-drop lewat cap_drop ALL
+[x] capability app dan Snort ditambahkan ulang secara eksplisit beserta alasannya
+[x] no-new-privileges aktif pada app dan Snort
+[x] root filesystem Snort read-only dan log tetap memakai volume
+[x] tidak ada klaim bahwa capability tinggi adalah pola produksi ideal
+[x] supply-chain image dan dependency dicatat transparan
+[x] lockfile dependency dipakai dengan frozen install
+[x] Trivy scan manual awal menemukan 1 HIGH pada gpgv dan temuannya dicatat
+[x] Dockerfile meng-upgrade gpgv ke fixed version saat rebuild image
+[x] Trivy scan ulang setelah rebuild menunjukkan 0 HIGH/CRITICAL
+[x] status digest pinning dan CI vulnerability gate tidak dibesar-besarkan
+[x] lifecycle secret runtime dijelaskan
+[x] privilege database aplikasi dijelaskan sebagai tradeoff bootstrap demo
+[x] Dockerfile memiliki HEALTHCHECK internal ke endpoint HTTPS lokal
+[x] script healthcheck valid secara sintaks
+```
