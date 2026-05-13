@@ -58,12 +58,16 @@ function redirect_to(string $path): never
     exit();
 }
 
-function set_flash(string $type, string $message): void
+function set_flash(string $type, string $message, array $oldInput = []): void
 {
     $_SESSION["flash"] = [
         "type" => $type,
         "text" => $message,
     ];
+
+    if ($oldInput !== []) {
+        $_SESSION["flash"]["old"] = $oldInput;
+    }
 }
 
 function pull_flash(): ?array

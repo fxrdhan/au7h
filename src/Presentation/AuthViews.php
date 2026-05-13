@@ -19,6 +19,10 @@ function render_auth_form_card(string $mode, ?array $flash): string
     $switchAction = $isRegister ? "Sign in" : "Create one";
     $passwordAutocomplete = $isRegister ? "new-password" : "current-password";
     $topMarginClass = $flash === null ? "mt-0" : "mt-4";
+    $oldInput = is_array($flash["old"] ?? null) ? $flash["old"] : [];
+    $usernameValue = isset($oldInput["username"])
+        ? (string) $oldInput["username"]
+        : "";
 
     $confirmField = $isRegister
         ? render_auth_field(
@@ -26,6 +30,7 @@ function render_auth_form_card(string $mode, ?array $flash): string
             "confirm_password",
             "password",
             "new-password",
+            "",
             "",
             null,
             true,
@@ -62,6 +67,7 @@ function render_auth_form_card(string $mode, ?array $flash): string
             "text",
             "username",
             "johndoe",
+            $usernameValue,
         ) .
         '
           ' .
@@ -70,6 +76,7 @@ function render_auth_form_card(string $mode, ?array $flash): string
             "password",
             "password",
             $passwordAutocomplete,
+            "",
             "",
             null,
             true,

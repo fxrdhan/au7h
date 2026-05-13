@@ -112,6 +112,7 @@ function render_auth_field(
     string $type,
     string $autocomplete,
     string $placeholder,
+    string $value = "",
     ?string $hint = null,
     bool $required = true,
     string $inputAttributes = "",
@@ -129,6 +130,8 @@ function render_auth_field(
                 "</p>";
     $extraInputAttributes =
         $inputAttributes === "" ? "" : " " . trim($inputAttributes);
+    $valueAttribute =
+        $value === "" ? "" : ' value="' . escape_html($value) . '"';
 
     return '
       <div>
@@ -153,7 +156,9 @@ function render_auth_field(
         '"
           placeholder="' .
         escape_html($placeholder) .
-        '"
+        '"' .
+        $valueAttribute .
+        '
           class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-hidden placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-200 dark:focus:ring-zinc-100/45"' .
         $requiredAttribute .
         $extraInputAttributes .

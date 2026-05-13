@@ -20,13 +20,16 @@ if (!$usernameValidation["ok"] || !$passwordValidation["ok"]) {
         "error",
         (string) ($usernameValidation["message"] ??
             $passwordValidation["message"]),
+        ["username" => $submittedUsername],
     );
     redirect_to("/?mode=register");
 }
 
 if (!hash_equals((string) $passwordValidation["value"], $confirmPassword)) {
     record_auth_rate_limit_failure("register");
-    set_flash("error", "Konfirmasi password tidak cocok.");
+    set_flash("error", "Konfirmasi password tidak cocok.", [
+        "username" => $submittedUsername,
+    ]);
     redirect_to("/?mode=register");
 }
 
@@ -36,8 +39,10 @@ $lookup = username_lookup($username);
 
 if (find_user_by_lookup($lookup) !== null) {
     record_auth_rate_limit_failure("register");
-    set_flash("success", "Username sudah terdaftar. Silakan login.");
-    redirect_to("/?mode=login");
+    set_flash("error", "Username sudah terdaftar. Gunakan username lain.", [
+        "username" => $username,
+    ]);
+    redirect_to("/?mode=register");
 }
 
 try {
