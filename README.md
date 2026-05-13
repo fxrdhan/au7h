@@ -57,7 +57,7 @@ bun run dev
 
 Akses aplikasi di:
 
-- `http://localhost:10080`
+- `http://localhost:18080`
 - `https://localhost:10443`
 
 Script tambahan:
@@ -83,10 +83,10 @@ Script tambahan:
 
 Perubahan di `src/`, `config/`, dan `public/` cukup di-refresh di browser. Perubahan di `resources/tailwind.css` akan memperbarui `public/styles.css`.
 
-Port dev default sengaja memakai `10080` dan `10443` agar tidak bentrok dengan service lokal lain. Kalau ingin ganti:
+Port dev default sengaja memakai `18080` dan `10443` agar tidak bentrok dengan service lokal lain. Port HTTP `18080` juga aman untuk Chrome, tidak seperti `10080` yang termasuk blocked/unsafe port. Kalau ingin ganti:
 
 ```bash
-HOST_HTTP_PORT=11080 HOST_HTTPS_PORT=11443 bun run dev
+HOST_HTTP_PORT=19080 HOST_HTTPS_PORT=11443 bun run dev
 ```
 
 Sertifikat dev dibaca dari folder `certs/` di host. Jika ingin browser benar-benar menganggap `https://localhost:10443` aman, isi `certs/server.crt` dan `certs/server.key` dengan sertifikat `localhost` dari `mkcert`. Jika file itu belum ada, container akan membuat self-signed cert biasa dan browser akan tetap memberi peringatan.

@@ -3111,7 +3111,7 @@ Blok ini mendefinisikan service utama `app` dan membangun image dari source loka
 
 ```yaml
     ports:
-      - "${HOST_HTTP_PORT:-10080}:8080"
+      - "${HOST_HTTP_PORT:-18080}:8080"
       - "${HOST_HTTPS_PORT:-10443}:8443"
     environment:
       PUBLIC_HTTPS_PORT: ${HOST_HTTPS_PORT:-10443}
@@ -3154,7 +3154,7 @@ docker compose restart app
 Browser bisa mengakses:
 
 ```text
-http://localhost:10080
+http://localhost:18080
 https://localhost:10443
 ```
 
@@ -4186,7 +4186,7 @@ Yang ditunjukkan:
 
 1. service `app` aktif,
 2. service `snort` aktif sebagai IDS sidecar,
-3. port HTTP `10080` dan HTTPS `10443` terpublish.
+3. port HTTP `18080` dan HTTPS `10443` terpublish.
 
 ### 5.2. Buka aplikasi lewat browser
 
@@ -4213,7 +4213,7 @@ Yang ditunjukkan:
 ### 5.3. Buktikan HTTP diarahkan ke HTTPS
 
 ```bash
-curl -k -I http://localhost:10080
+curl -k -I http://localhost:18080
 ```
 
 Yang ditunjukkan:
@@ -4333,7 +4333,7 @@ Yang harus terlihat:
 
 ![Container app dan Snort aktif](assets/screenshots/01-compose-services.png)
 
-Gambar ini menunjukkan `docker compose -f compose.dev.yaml ps` dengan service `app` dan `snort` berstatus `Up`, serta port `10080->8080` dan `10443->8443` terpublish.
+Gambar ini menunjukkan `docker compose -f compose.dev.yaml ps` dengan service `app` dan `snort` berstatus `Up`, serta port `18080->8080` dan `10443->8443` terpublish.
 
 ![Build ulang container berhasil sebelum uji negatif](assets/screenshots/10-dev-up-build.png)
 
@@ -4344,7 +4344,7 @@ Gambar ini menunjukkan `bun run dev:up` menjalankan `docker compose -f compose.d
 Alur pengujian: kirim request HEAD ke endpoint HTTP untuk memastikan web server tidak melayani konten sensitif di kanal tidak terenkripsi.
 
 ```bash
-curl -I http://localhost:10080
+curl -I http://localhost:18080
 ```
 
 Yang harus terlihat:
@@ -4356,7 +4356,7 @@ Yang harus terlihat:
 
 ![HTTP redirect ke HTTPS](assets/screenshots/02-http-redirect.png)
 
-Gambar ini menunjukkan request `curl -k -I http://localhost:10080` menerima status `301 Moved Permanently` dan header `Location: https://localhost:10443/`.
+Gambar ini menunjukkan request `curl -k -I http://localhost:18080` menerima status `301 Moved Permanently` dan header `Location: https://localhost:10443/`.
 
 ### Uji 3 - Form tampil di browser
 
@@ -4789,8 +4789,8 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | --- | --- | --- |
 | Unit security helper | `bun run test` | `Auth security tests passed.` |
 | Cakupan test helper keamanan | Review `tests/AuthSecurityTest.php` | test mencakup validasi input, normalisasi username, HMAC lookup, enkripsi/dekripsi username, hashing/verifikasi password, CSRF token termasuk token kosong/format rusak, dan key/policy rate limit |
-| Container app + Snort | `docker compose -f compose.dev.yaml up -d --build` lalu `docker compose -f compose.dev.yaml ps` | service `app` dan `snort` berstatus `Up`; port `10080->8080` dan `10443->8443` terpublish |
-| Redirect HTTP ke HTTPS | `curl -k -I http://localhost:10080` | `HTTP/1.1 301 Moved Permanently`, `Location: https://localhost:10443/` |
+| Container app + Snort | `docker compose -f compose.dev.yaml up -d --build` lalu `docker compose -f compose.dev.yaml ps` | service `app` dan `snort` berstatus `Up`; port `18080->8080` dan `10443->8443` terpublish |
+| Redirect HTTP ke HTTPS | `curl -k -I http://localhost:18080` | `HTTP/1.1 301 Moved Permanently`, `Location: https://localhost:10443/` |
 | Form dan CSRF | `curl -k -s https://localhost:10443/` | HTML memuat form `POST`, action `/register.php`, dan hidden field `csrf_token` |
 | Register berhasil | Submit form register dengan username unik, password valid, dan `confirm_password` cocok | response `302 Found`, `Location: /?mode=login` |
 | Login berhasil | Submit form login memakai akun hasil register | response `302 Found`, `Location: /welcome.php` |

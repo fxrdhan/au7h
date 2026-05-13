@@ -400,7 +400,7 @@ bun run acl:status
 
 Endpoint default saat development:
 
-- `http://localhost:10080`
+- `http://localhost:18080`
 - `https://localhost:10443`
 
 Script yang tersedia:

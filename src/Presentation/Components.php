@@ -4,38 +4,48 @@ declare(strict_types=1);
 
 function escape_html(string $value): string
 {
-    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 }
 
 function render_flash(?array $flash): string
 {
-    if ($flash === null || !isset($flash['text'])) {
-        return '';
+    if ($flash === null || !isset($flash["text"])) {
+        return "";
     }
 
-    $isSuccess = ($flash['type'] ?? 'error') === 'success';
+    $isSuccess = ($flash["type"] ?? "error") === "success";
     $className = $isSuccess
-        ? 'border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-200'
-        : 'border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-500/35 dark:bg-rose-500/10 dark:text-rose-200';
+        ? "border-emerald-200/80 bg-emerald-50 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-200"
+        : "border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-500/35 dark:bg-rose-500/10 dark:text-rose-200";
 
-    return '<div class="rounded-xl border px-4 py-3 text-sm font-medium shadow-xs ' . $className . '" role="status">'
-        . escape_html((string) $flash['text'])
-        . '</div>';
+    return '<div class="rounded-xl border px-4 py-3 text-sm font-medium shadow-xs ' .
+        $className .
+        '" role="status">' .
+        escape_html((string) $flash["text"]) .
+        "</div>";
 }
 
 function render_brand(bool $inverse = false, bool $showText = true): string
 {
-    $textClass = $inverse ? 'text-zinc-50' : 'text-foreground';
-    $iconClass = $inverse ? 'invert' : 'dark:invert';
+    $textClass = $inverse ? "text-zinc-50" : "text-foreground";
+    $iconClass = $inverse ? "invert" : "dark:invert";
     $label = $showText
-        ? '<span class="block translate-y-[4px] text-2xl font-extrabold leading-none">Au7h</span>'
-        : '';
-    $gapClass = $showText ? 'gap-3' : '';
+        ? '<span class="block translate-y-1 text-2xl font-extrabold leading-none">Au7h</span>'
+        : "";
+    $gapClass = $showText ? "gap-3" : "";
 
     return '
-      <a href="/" class="inline-flex items-end ' . $gapClass . ' text-sm font-semibold tracking-tight ' . $textClass . '">
-        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 translate-y-[3px] ' . $iconClass . '">
-        ' . $label . '
+      <a href="/" class="inline-flex items-end ' .
+        $gapClass .
+        " text-sm font-semibold tracking-tight " .
+        $textClass .
+        '">
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-9 w-9 shrink-0 translate-y-0.75 ' .
+        $iconClass .
+        '">
+        ' .
+        $label .
+        '
       </a>';
 }
 
@@ -43,8 +53,8 @@ function render_auth_mark(): string
 {
     return '
       <a href="/?mode=register" class="inline-flex items-end gap-2 text-sm font-semibold tracking-tight text-foreground dark:text-white">
-        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 translate-y-[2px] dark:invert">
-        <span class="block translate-y-[2px] text-xl font-extrabold leading-none">Au7h</span>
+        <img src="/favicon.svg" alt="" aria-hidden="true" class="h-5 w-5 shrink-0 translate-y-0.5 dark:invert">
+        <span class="block translate-y-0.5 text-xl font-extrabold leading-none">Au7h</span>
       </a>';
 }
 
@@ -77,17 +87,23 @@ function render_theme_toggle_button(): string
       </button>';
 }
 
-function render_brand_controls(bool $compact = false, bool $alignRight = false, bool $showToggle = true, bool $showText = true): string
-{
+function render_brand_controls(
+    bool $compact = false,
+    bool $alignRight = false,
+    bool $showToggle = true,
+    bool $showText = true,
+): string {
     $brand = $compact ? render_auth_mark() : render_brand(false, $showText);
     if (!$showToggle) {
-        return '<div class="inline-flex items-center gap-3">' . $brand . '</div>';
+        return '<div class="inline-flex items-center gap-3">' .
+            $brand .
+            "</div>";
     }
 
     $toggle = render_theme_toggle_button();
     $content = $alignRight ? $toggle . $brand : $brand . $toggle;
 
-    return '<div class="inline-flex items-center gap-3">' . $content . '</div>';
+    return '<div class="inline-flex items-center gap-3">' . $content . "</div>";
 }
 
 function render_auth_field(
@@ -98,47 +114,81 @@ function render_auth_field(
     string $placeholder,
     ?string $hint = null,
     bool $required = true,
-    string $inputAttributes = '',
-    string $afterInputHtml = ''
+    string $inputAttributes = "",
+    string $afterInputHtml = "",
 ): string {
-    $requiredAttribute = $required ? ' required' : '';
-    $requiredIndicator = $required ? '<span class="ml-1 text-rose-500 dark:text-rose-300" aria-hidden="true">*</span>' : '';
-    $hintMarkup = $hint === null ? '' : '<p class="mt-1.5 text-xs leading-4 text-muted-foreground dark:text-zinc-300">' . escape_html($hint) . '</p>';
-    $extraInputAttributes = $inputAttributes === '' ? '' : ' ' . trim($inputAttributes);
+    $requiredAttribute = $required ? " required" : "";
+    $requiredIndicator = $required
+        ? '<span class="ml-1 text-rose-500 dark:text-rose-300" aria-hidden="true">*</span>'
+        : "";
+    $hintMarkup =
+        $hint === null
+            ? ""
+            : '<p class="mt-1.5 text-xs leading-4 text-muted-foreground dark:text-zinc-300">' .
+                escape_html($hint) .
+                "</p>";
+    $extraInputAttributes =
+        $inputAttributes === "" ? "" : " " . trim($inputAttributes);
 
     return '
       <div>
-        <label class="mb-2.5 block text-[13px] font-semibold text-foreground dark:text-zinc-100" for="' . escape_html($name) . '">' . escape_html($label) . $requiredIndicator . '</label>
+        <label class="mb-2.5 block text-[13px] font-semibold text-foreground dark:text-zinc-100" for="' .
+        escape_html($name) .
+        '">' .
+        escape_html($label) .
+        $requiredIndicator .
+        '</label>
         <input
-          id="' . escape_html($name) . '"
-          name="' . escape_html($name) . '"
-          type="' . escape_html($type) . '"
-          autocomplete="' . escape_html($autocomplete) . '"
-          placeholder="' . escape_html($placeholder) . '"
-          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-hidden placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-200 dark:focus:ring-zinc-100/45"' . $requiredAttribute . $extraInputAttributes . '
-        >' . $hintMarkup . $afterInputHtml . '
+          id="' .
+        escape_html($name) .
+        '"
+          name="' .
+        escape_html($name) .
+        '"
+          type="' .
+        escape_html($type) .
+        '"
+          autocomplete="' .
+        escape_html($autocomplete) .
+        '"
+          placeholder="' .
+        escape_html($placeholder) .
+        '"
+          class="flex h-10 w-full rounded-md border border-zinc-300 bg-white/92 px-3 text-sm text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.02)] outline-hidden placeholder:text-zinc-400 hover:border-zinc-500 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/45 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400 dark:hover:border-zinc-500 dark:focus:border-zinc-200 dark:focus:ring-zinc-100/45"' .
+        $requiredAttribute .
+        $extraInputAttributes .
+        '
+        >' .
+        $hintMarkup .
+        $afterInputHtml .
+        '
       </div>';
 }
 
 function render_password_requirements(): string
 {
     $requirements = [
-        ['length', '10 characters long'],
-        ['case', 'Uppercase and lowercase'],
-        ['number', 'Number'],
+        ["length", "10 characters long"],
+        ["case", "Uppercase and lowercase"],
+        ["number", "Number"],
     ];
-    $items = '';
+    $items = "";
 
     foreach ($requirements as [$rule, $label]) {
-        $items .= '
-          <li data-password-rule="' . escape_html($rule) . '" class="flex items-center gap-2 text-xs leading-4 text-muted-foreground transition-colors dark:text-zinc-300">
+        $items .=
+            '
+          <li data-password-rule="' .
+            escape_html($rule) .
+            '" class="flex items-center gap-2 text-xs leading-4 text-muted-foreground transition-colors dark:text-zinc-300">
             <span data-password-check aria-hidden="true" class="inline-flex h-4 w-4 shrink-0 scale-100 items-center justify-center rounded-[5px] border border-zinc-400 bg-white text-transparent transition-[background-color,border-color,color,transform] duration-200 ease-out dark:border-zinc-500 dark:bg-zinc-900">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3">
                 <path data-password-check-path class="[stroke-dasharray:18] [stroke-dashoffset:18] transition-[stroke-dashoffset] duration-200 ease-out" d="M3.5 8.2 6.5 11 12.5 5"></path>
               </svg>
             </span>
             <span data-password-label class="relative inline-block transition-colors">
-              ' . escape_html($label) . '
+              ' .
+            escape_html($label) .
+            '
               <span data-password-strike aria-hidden="true" class="absolute left-0 right-0 top-1/2 h-px origin-left -translate-y-1/2 scale-x-0 bg-current transition-transform duration-200 ease-out"></span>
             </span>
           </li>';
@@ -149,7 +199,9 @@ function render_password_requirements(): string
           Must be at least 10 characters long, with uppercase, lowercase, and number.
         </p>
         <ul id="password-requirements" data-password-requirements class="mt-0 max-h-0 translate-y-1 overflow-hidden pl-0.5 space-y-1.5 opacity-0 transition-[max-height,opacity,transform,margin] duration-200 ease-out" aria-label="Password requirements">
-          ' . $items . '
+          ' .
+        $items .
+        '
         </ul>';
 }
 
@@ -177,7 +229,9 @@ function render_layout(string $title, string $content): string
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>' . escape_html($title) . '</title>
+    <title>' .
+        escape_html($title) .
+        '</title>
     <script src="/theme.js"></script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/styles.css">
@@ -194,28 +248,40 @@ function render_layout(string $title, string $content): string
         data-matrix-rain
       ></div>
       <main id="page-shell-content" class="relative z-10 min-h-svh">
-      ' . $content . '
+      ' .
+        $content .
+        '
       </main>
     </div>
   </body>
 </html>';
 }
 
-function render_result_page_shell(string $innerContent, string $maxWidthClass = 'max-w-xl'): string
-{
+function render_result_page_shell(
+    string $innerContent,
+    string $maxWidthClass = "max-w-xl",
+): string {
     return '
       <section class="flex min-h-svh items-center justify-center p-6 md:p-10">
-        <div data-page-surface="result-card" class="w-full ' . $maxWidthClass . ' rounded-4xl border border-white/70 bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
+        <div data-page-surface="result-card" class="w-full ' .
+        $maxWidthClass .
+        ' rounded-4xl border border-white/70 bg-white/96 p-8 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.3)] backdrop-blur-lg dark:border-zinc-800 dark:bg-zinc-950 dark:shadow-[0_30px_80px_-42px_rgba(0,0,0,0.82)] md:p-10">
           <div class="flex items-start justify-between gap-6">
             <div class="flex items-center justify-start">
-              ' . render_brand(false, false) . '
+              ' .
+        render_brand(false, false) .
+        '
             </div>
             <div class="shrink-0">
-              ' . render_theme_toggle_button() . '
+              ' .
+        render_theme_toggle_button() .
+        '
             </div>
           </div>
           <div class="mt-8">
-            ' . $innerContent . '
+            ' .
+        $innerContent .
+        '
           </div>
         </div>
       </section>';

@@ -364,7 +364,7 @@ Contoh perintah yang dipakai saat pengujian:
 ```bash
 bun run build:css
 docker compose -f compose.dev.yaml up -d --build
-curl -I http://localhost:10080
+curl -I http://localhost:18080
 curl -k -I https://localhost:10443
 ```
 
