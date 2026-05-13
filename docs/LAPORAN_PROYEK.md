@@ -46,7 +46,7 @@
   - [Uji 10 - XSS](#uji-10---xss)
   - [Uji 11 - Buffer overflow / oversized input](#uji-11---buffer-overflow-oversized-input)
   - [Uji 12 - Rate limit](#uji-12---rate-limit)
-  - [Uji 13 - Snort IDS dan rule lokal](#uji-13---snort-ids-dan-rule-lokal)
+  - [Uji 13 - Snort IDS, rule komunitas, dan rule lokal](#uji-13---snort-ids-rule-komunitas-dan-rule-lokal)
   - [Uji 14 - ACL port jaringan](#uji-14---acl-port-jaringan)
   - [Uji 15 - Test otomatis helper keamanan](#uji-15---test-otomatis-helper-keamanan)
   - [Uji 16 - Hygiene secret dan build context](#uji-16---hygiene-secret-dan-build-context)
@@ -528,7 +528,7 @@ Bagian ini mengatur urutan startup: Docker menjalankan `docker-entrypoint-custom
 
 Shell dibuka dalam mode ketat, lalu secret runtime hanya dibuat saat file belum ada.
 
-**Sumber:** [docker-entrypoint.sh:50](/home/fxrdhan/au7h/docker-entrypoint.sh:50)
+**Sumber:** [docker-entrypoint.sh:44](/home/fxrdhan/au7h/docker-entrypoint.sh:44), [docker-entrypoint.sh:64](/home/fxrdhan/au7h/docker-entrypoint.sh:64)
 
 **Alur kode:** saat container pertama kali start, skrip mengecek apakah file secret sudah ada; jika belum, skrip membuat semua secret runtime sekaligus lalu menyimpannya ke satu file yang dimuat kembali oleh proses bootstrap.
 
@@ -541,6 +541,22 @@ if [ ! -f "${SECRET_FILE}" ]; then
     printf 'MYSQL_APP_PASSWORD=%s\n' "$(openssl rand -hex 24)"
   } > "${SECRET_FILE}"
 fi
+```
+
+Setelah secret dimuat, entrypoint menulis file opsi client root MySQL sementara. File ini membuat command `mysql` dan `mysqladmin` bisa memakai `--defaults-extra-file`, sehingga password root tidak dikirim sebagai argumen command line.
+
+```sh
+write_mysql_root_client_config() {
+  rm -f "${MYSQL_ROOT_CLIENT_CONFIG}"
+  {
+    printf '[client]\n'
+    printf 'user=root\n'
+    printf 'password=%s\n' "${MYSQL_ROOT_PASSWORD}"
+    printf 'protocol=socket\n'
+    printf 'socket=%s\n' "${MYSQL_SOCKET}"
+  } > "${MYSQL_ROOT_CLIENT_CONFIG}"
+  chmod 600 "${MYSQL_ROOT_CLIENT_CONFIG}"
+}
 ```
 
 **Langkah 3:**
@@ -599,7 +615,7 @@ MYSQLD_PID=$!
 
 **Sumber:** [docker-entrypoint.sh:154](/home/fxrdhan/au7h/docker-entrypoint.sh:154)
 
-**Alur kode:** cabang bootstrap ini hanya berjalan untuk database yang masih kosong; urutannya adalah mengunci password root, membuat database aplikasi, membuat akun aplikasi, memberi grant, lalu menutup dengan `FLUSH PRIVILEGES`.
+**Alur kode:** cabang bootstrap ini hanya berjalan untuk database yang masih kosong; urutannya adalah mengunci password root, membuat database aplikasi, membuat akun aplikasi, memberi grant, lalu menutup dengan `FLUSH PRIVILEGES`. Untuk database yang sudah ada, entrypoint memakai file opsi client root agar password tidak perlu muncul di argumen command line.
 
 ```sh
 if [ "${MYSQL_BOOTSTRAP_REQUIRED}" -eq 1 ]; then
@@ -617,11 +633,22 @@ FLUSH PRIVILEGES;
 EOF
 ```
 
+```sh
+mysql --defaults-extra-file="${MYSQL_ROOT_CLIENT_CONFIG}" <<EOF
+CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+...
+FLUSH PRIVILEGES;
+EOF
+```
+
 #### Keputusan penting
 
 1. secret runtime tidak ditanam di image, tetapi dibuat saat container pertama kali start,
 2. sertifikat self-signed cukup untuk demo lokal; sertifikat host bisa di-mount saat perlu,
-3. MySQL dibind ke `127.0.0.1` secara default agar tidak terbuka ke luar container.
+3. MySQL dibind ke `127.0.0.1` secara default agar tidak terbuka ke luar container,
+4. akses root MySQL setelah bootstrap memakai file opsi client sementara dengan permission `600`, bukan password di argumen command line.
 
 ### Tahap 4 - Menyalakan HTTPS dan redirect HTTP ke HTTPS
 
@@ -3998,7 +4025,7 @@ Menjelaskan siklus hidup secret runtime dan batas privilege database, supaya kon
 
 #### Analisis alur
 
-Secret yang dipakai untuk pepper, enkripsi username, root MySQL, dan user aplikasi dibuat saat container pertama kali berjalan. Secret ini tidak masuk image dan tidak masuk Git, tetapi tetap punya lifecycle: dibuat, disimpan di volume, dipakai ulang, dan bisa hilang jika volume dihapus. Di sisi database, user aplikasi diberi akses ke database aplikasi agar bootstrap demo bisa berjalan otomatis.
+Secret yang dipakai untuk pepper, enkripsi username, root MySQL, dan user aplikasi dibuat saat container pertama kali berjalan. Secret ini tidak masuk image dan tidak masuk Git, tetapi tetap punya lifecycle: dibuat, disimpan di volume, dipakai ulang, dan bisa hilang jika volume dihapus. Password root MySQL juga ditulis ke file opsi client sementara di `/var/run/mysqld/root-client.cnf` dengan permission `600` agar command administrasi tidak perlu menerima password lewat argumen command line. Di sisi database, user aplikasi diberi akses ke database aplikasi agar bootstrap demo bisa berjalan otomatis.
 
 #### Implementasi
 
@@ -4023,7 +4050,7 @@ set -a
 set +a
 ```
 
-Secret dibuat hanya jika file belum ada. Karena entrypoint memakai `umask 077`, file yang baru dibuat memiliki permission ketat untuk pemiliknya. Di Compose, path `/var/www/data` dipasang ke named volume `au7h-data`, sehingga secret tetap ada saat container dibuat ulang tetapi hilang jika volume dihapus.
+Secret dibuat hanya jika file belum ada. Karena entrypoint memakai `umask 077`, file yang baru dibuat memiliki permission ketat untuk pemiliknya. Di Compose, path `/var/www/data` dipasang ke named volume `au7h-data`, sehingga secret tetap ada saat container dibuat ulang tetapi hilang jika volume dihapus. File `/var/run/mysqld/root-client.cnf` dibuat ulang saat container start dan dipakai oleh `mysql --defaults-extra-file` serta `mysqladmin --defaults-extra-file`.
 
 **Langkah 2:**
 
@@ -4069,7 +4096,7 @@ Untuk produksi, pola yang lebih ketat adalah memisahkan:
 
 #### Hasil tahap
 
-Lifecycle secret dan privilege database sudah tercatat penuh: secret dibuat runtime dan dipersist di volume, ignore file mencegah kebocoran lokal, privilege database dibatasi pada database aplikasi, dan batasan `GRANT ALL` untuk demo dijelaskan tanpa klaim berlebihan.
+Lifecycle secret dan privilege database sudah tercatat penuh: secret dibuat runtime dan dipersist di volume, file opsi client root MySQL dibuat sementara dengan permission ketat, ignore file mencegah kebocoran lokal, privilege database dibatasi pada database aplikasi, dan batasan `GRANT ALL` untuk demo dijelaskan tanpa klaim berlebihan.
 
 ### Tahap 24 - Menambahkan healthcheck container
 
@@ -4235,17 +4262,19 @@ Catatan saat menjelaskan SQL injection: payload memang ditolak oleh validasi use
 ### 5.7. Demo Snort IDS dan ACL jaringan
 
 ```bash
+bun run snort:update-rules
 bun run snort:test-rules
 bun run acl:status
 ```
 
 Yang ditunjukkan:
 
-1. konfigurasi Snort valid,
-2. rule lokal dan komunitas dimuat,
-3. chain `AU7H_INPUT` aktif,
-4. HTTP/HTTPS diizinkan,
-5. MySQL `3306`, SSH `22`, dan ICMP dibatasi sesuai ACL.
+1. community rules Snort berhasil diunduh dan ditulis ke `security/snort/rules/community.rules`,
+2. konfigurasi Snort valid,
+3. rule lokal dan komunitas dimuat,
+4. chain `AU7H_INPUT` aktif,
+5. HTTP/HTTPS diizinkan,
+6. MySQL `3306`, SSH `22`, dan ICMP dibatasi sesuai ACL.
 
 ### 5.8. Demo test keamanan dan hygiene secret
 
@@ -4270,6 +4299,7 @@ docker compose -f compose.dev.yaml config
 sed -n '1,70p' Dockerfile
 sed -n '1,80p' .github/workflows/ci.yml
 docker compose -f compose.dev.yaml exec app sh -lc 'stat -c "%a %U:%G %n" /var/www/data/runtime-secrets.env'
+docker compose -f compose.dev.yaml exec app sh -lc 'stat -c "%a %U:%G %n" /var/run/mysqld/root-client.cnf'
 docker container inspect --format '{{json .State.Health}}' au7h-app-1
 ```
 
@@ -4279,7 +4309,8 @@ Yang ditunjukkan:
 2. tidak ada `privileged: true` dan `no-new-privileges:true` aktif,
 3. image serta dependency build berasal dari tag/lockfile yang jelas,
 4. secret runtime berada di volume data dan tidak masuk Git/build context,
-5. healthcheck container tersedia dan dapat dibaca dari state Docker.
+5. file opsi client root MySQL bersifat runtime sementara dan permission-nya ketat,
+6. healthcheck container tersedia dan dapat dibaca dari state Docker.
 
 ## 6. Urutan Verifikasi Setelah Implementasi
 
@@ -4517,26 +4548,33 @@ Hasil yang diharapkan:
 
 Gambar ini menunjukkan lima percobaan login gagal pertama menerima `HTTP 302`, lalu percobaan keenam menerima `HTTP 429` dengan pesan `Terlalu banyak percobaan`.
 
-### Uji 13 - Snort IDS dan rule lokal
+### Uji 13 - Snort IDS, rule komunitas, dan rule lokal
 
-Alur pengujian: validasi konfigurasi Snort, jalankan traffic HTTP/HTTPS, lalu baca file alert Snort.
+Alur pengujian: perbarui community rules Snort, validasi konfigurasi Snort, jalankan traffic HTTP/HTTPS, lalu baca file alert Snort.
 
 ```bash
+bun run snort:update-rules
 bun run snort:test-rules
 bun run snort:logs
 ```
 
 Yang harus terlihat:
 
-1. konfigurasi Snort valid tanpa warning fatal,
-2. alert HTTP/HTTPS muncul saat browser atau `curl` mengakses aplikasi,
-3. alert MySQL atau SSH muncul saat ada percobaan akses langsung ke port `3306` atau `22`.
+1. `community.rules` berhasil diperbarui dari archive resmi Snort,
+2. output update menampilkan SHA-256 archive, file `.rules` yang ditemukan, jumlah baris, dan jumlah enabled rule lines,
+3. konfigurasi Snort valid dengan `4661` rules loaded dan `0 warnings`,
+4. alert HTTP/HTTPS muncul saat browser atau `curl` mengakses aplikasi,
+5. alert MySQL atau SSH muncul saat ada percobaan akses langsung ke port `3306` atau `22`.
 
 #### Bukti visual Uji 13
 
+![Update Snort community rules berhasil](assets/screenshots/28-snort-community-rules-update.png)
+
+Gambar ini menunjukkan `bun run snort:update-rules` mengunduh archive community rules dari Snort, mencetak SHA-256 archive, menemukan file `snort3-community.rules`, lalu menulis `security/snort/rules/community.rules` dengan `4017` baris/rule aktif.
+
 ![Validasi konfigurasi Snort berhasil](assets/screenshots/07-snort-rules.png)
 
-Gambar ini menunjukkan `bun run snort:test-rules` berhasil memvalidasi konfigurasi Snort, memuat `644` rules, dan berakhir dengan `0 warnings`.
+Gambar ini menunjukkan format validasi konfigurasi Snort. Pada verifikasi terbaru setelah `community.rules` diperbarui, `bun run snort:test-rules` memuat `4661` rules dan berakhir dengan `0 warnings`.
 
 ![Alert Snort muncul saat traffic HTTPS](assets/screenshots/08-snort-alert.png)
 
@@ -4690,20 +4728,22 @@ Gambar ini menunjukkan hasil akhir Uji 18 setelah image dibuild ulang dan packag
 
 ### Uji 19 - Lifecycle secret dan privilege database
 
-Alur pengujian: periksa file secret runtime, ignore file, dan grant database untuk memastikan secret dan privilege database tidak hanya dijelaskan secara abstrak.
+Alur pengujian: periksa file secret runtime, file opsi client root MySQL, ignore file, dan grant database untuk memastikan secret dan privilege database tidak hanya dijelaskan secara abstrak.
 
 ```bash
 docker compose -f compose.dev.yaml exec app sh -lc 'stat -c "%a %U:%G %n" /var/www/data/runtime-secrets.env'
-docker compose -f compose.dev.yaml exec app sh -lc '. /var/www/data/runtime-secrets.env; mysql --protocol=socket --socket=/var/run/mysqld/mysqld.sock -uroot -p"$MYSQL_ROOT_PASSWORD" -e "SHOW GRANTS FOR '\''au7h_app'\''@'\''127.0.0.1'\'';"'
+docker compose -f compose.dev.yaml exec app sh -lc 'stat -c "%a %U:%G %n" /var/run/mysqld/root-client.cnf'
+docker compose -f compose.dev.yaml exec app sh -lc 'mysql --defaults-extra-file=/var/run/mysqld/root-client.cnf -e "SHOW GRANTS FOR '\''au7h_app'\''@'\''127.0.0.1'\'';"'
 ```
 
 Yang harus terlihat:
 
 1. `runtime-secrets.env` berada di `/var/www/data`, bukan di image atau repo,
 2. permission file secret ketat karena entrypoint memakai `umask 077`,
-3. `data/` dan `certs/` dikecualikan dari Git dan Docker build context,
-4. grant user aplikasi dibatasi ke database aplikasi,
-5. `GRANT ALL` pada database aplikasi dijelaskan sebagai tradeoff bootstrap demo, bukan least-privilege produksi penuh.
+3. file opsi client root MySQL di `/var/run/mysqld/root-client.cnf` memiliki permission `600`,
+4. `data/` dan `certs/` dikecualikan dari Git dan Docker build context,
+5. grant user aplikasi dibatasi ke database aplikasi,
+6. `GRANT ALL` pada database aplikasi dijelaskan sebagai tradeoff bootstrap demo, bukan least-privilege produksi penuh.
 
 #### Bukti visual Uji 19
 
@@ -4763,7 +4803,8 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | XSS | Payload username `<script>alert(1)</script>` pada form register | validasi username menolak karakter berbahaya; output dinamis tetap melewati `escape_html()` dan CSP aktif sebagai lapisan tambahan |
 | Buffer overflow / oversized input | Submit register dengan username 80 karakter, lalu cek `/etc/php/8.4/apache2/conf.d/90-au7h-security.ini` di container app | request ditolak kembali ke `/?mode=register`; config Apache PHP memuat `file_uploads = Off`, `post_max_size = 8K`, `upload_max_filesize = 1K`, dan `max_input_vars = 20` |
 | Rate limiting | Login gagal 6 kali beruntun untuk subject yang sama | percobaan 1-5 menghasilkan `302`, percobaan ke-6 menghasilkan `429` |
-| Snort rules | `bun run snort:test-rules` | Snort berhasil validasi konfigurasi, `644` rules loaded, `0 warnings` |
+| Snort community rules update | `bun run snort:update-rules` | archive community rules berhasil diunduh, SHA-256 tercatat, 1 file `.rules` ditemukan, dan `community.rules` ditulis dengan `4017` lines/enabled rule lines |
+| Snort rules | `bun run snort:test-rules` | Snort berhasil validasi konfigurasi, `4661` rules loaded, `0 warnings` |
 | Snort live alert | `curl -k -s -o /dev/null https://localhost:10443/` lalu baca `/var/log/snort/alert_fast.txt` | alert `[1:1000002:3] "AU7H HTTP/HTTPS connection to web server"` muncul untuk traffic ke port `8443` |
 | ACL container | `bun run acl:status` | chain `AU7H_INPUT` aktif; HTTP/HTTPS `ACCEPT`; MySQL `3306` dan SSH `22` `REJECT`; ICMP echo request `DROP` |
 | Batas satu container | Review `Dockerfile` dan `compose.dev.yaml` | container `app` memuat Apache/PHP/MySQL; `snort` adalah sidecar IDS, bukan pemisahan web/database |
@@ -4774,7 +4815,7 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | Runtime privilege dan capability | `docker compose -f compose.dev.yaml config` dan review entrypoint | `app` dan `snort` memakai `cap_drop: ALL`; `app` menambahkan ulang `CHOWN`, `DAC_OVERRIDE`, `NET_ADMIN`, `SETGID`, dan `SETUID`; `snort` menambahkan ulang `DAC_OVERRIDE`/`NET_ADMIN`/`NET_RAW`; `no-new-privileges:true` aktif; root filesystem `snort` read-only; tidak ada `privileged: true`; MySQL dijalankan dengan `--user=mysql` |
 | Supply-chain image dan dependency | Review `Dockerfile`, `compose.dev.yaml`, `bun.lock`, dan CI | builder memakai `oven/bun:1.3.6`, runtime memakai `ubuntu:25.10`, dependency memakai `--frozen-lockfile`, CI build image berjalan; `snort3:latest` dicatat sebagai tradeoff demo |
 | Trivy vulnerability scan manual | scan awal, cek `apt-cache policy gpgv`, update `Dockerfile`, rebuild image, lalu scan ulang | scan awal menemukan `1` HIGH dan `0` CRITICAL pada paket `gpgv` (`CVE-2025-68973`); setelah `gpgv` dipasang sebagai versi `2.4.8-2ubuntu2.1`, scan ulang menunjukkan `0` HIGH/CRITICAL |
-| Lifecycle secret dan privilege database | Review `docker-entrypoint.sh`, ignore file, dan bootstrap SQL | secret dibuat runtime di `/var/www/data`, `data/` dan `certs/` dikecualikan dari Git/build context, grant user aplikasi dibatasi ke database aplikasi, `GRANT ALL` dijelaskan sebagai tradeoff bootstrap demo |
+| Lifecycle secret dan privilege database | Review `docker-entrypoint.sh`, ignore file, dan bootstrap SQL | secret dibuat runtime di `/var/www/data`, file opsi client root MySQL dibuat sementara dengan permission `600`, `data/` dan `certs/` dikecualikan dari Git/build context, grant user aplikasi dibatasi ke database aplikasi, `GRANT ALL` dijelaskan sebagai tradeoff bootstrap demo |
 | Healthcheck container | `docker image inspect --format '{{json .Config.Healthcheck}}' au7h`, `docker container inspect --format '{{json .State.Health}}' au7h-app-1`, dan `docker compose -f compose.dev.yaml ps` | metadata image memuat `Test:["CMD-SHELL","php /usr/local/bin/au7h-healthcheck.php"]`; container `au7h-app-1` berstatus `healthy`; Compose menampilkan `Up ... (healthy)` |
 
 ## 7. Pemetaan Requirement Tugas Ke Tahap Implementasi
@@ -4795,7 +4836,7 @@ Bagian ini mencatat hasil uji yang sudah dijalankan pada proyek, bukan hanya ren
 | Buffer overflow | Tahap 6 + pilihan stack pada Tahap 1 + Decision Log 3.4 + Tahap 19 |
 | SQL injection | Tahap 10, 19 |
 | XSS | Tahap 5, 9, 11, 15, 19 |
-| Snort IDS + rule lokal | Tahap 18 |
+| Snort IDS + rule komunitas/lokal | Tahap 18 |
 | ACL ICMP dan port | Tahap 18, 21 |
 | Test keamanan otomatis | Tahap 19 |
 | Secret lokal tidak masuk Git/build context | Tahap 20 |

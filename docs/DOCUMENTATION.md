@@ -332,6 +332,7 @@ Konfigurasi repo ini datang dari dua lapis:
 | `MYSQL_DATABASE` | Database bootstrap MySQL | `au7h_auth` |
 | `MYSQL_APP_USER` | User aplikasi di MySQL | `au7h_app` |
 | `MYSQL_PORT` | Port MySQL internal | `3306` |
+| `MYSQL_ROOT_CLIENT_CONFIG` | File opsi client sementara untuk akses root MySQL dari entrypoint | `/var/run/mysqld/root-client.cnf` |
 | `ACL_ENABLED` | Mengaktifkan ACL `iptables` di container | `0` runtime, `1` di `compose.dev.yaml` |
 | `ACL_WEB_CIDR` | CIDR yang boleh mengakses HTTP/HTTPS | `0.0.0.0/0` |
 | `ACL_DB_CIDR` | CIDR khusus yang boleh mengakses MySQL langsung | kosong, berarti tidak ada akses DB eksternal |
@@ -341,6 +342,7 @@ Catatan:
 
 - `docker-entrypoint.sh` membuat file secret runtime di `${APP_DATA_DIR}/runtime-secrets.env`
 - file secret itu berisi `PEPPER_SECRET`, `ENCRYPTION_KEY`, `MYSQL_ROOT_PASSWORD`, dan `MYSQL_APP_PASSWORD`
+- setelah secret dimuat, entrypoint membuat file opsi client root MySQL di `${MYSQL_ROOT_CLIENT_CONFIG}` dengan permission `600`; file ini dipakai agar password root tidak dikirim lewat argumen command line
 - `DB_PASSWORD` akan memakai `MYSQL_APP_PASSWORD` jika `DB_PASSWORD` tidak di-set eksplisit
 - jika sertifikat `server.crt` dan `server.key` tidak tersedia di `${CERT_DIR}`, container membuat self-signed certificate otomatis
 
@@ -482,12 +484,13 @@ Saat container boot, script ini akan:
 
 1. menyiapkan direktori runtime
 2. menghasilkan secret acak jika belum ada
-3. menghasilkan sertifikat self-signed jika belum ada
-4. merender konfigurasi Apache dari template
-5. menginisialisasi MySQL jika data directory masih kosong
-6. membuat database dan user aplikasi
-7. menjalankan MySQL dan Apache sekaligus
-8. menangani shutdown keduanya dengan graceful cleanup
+3. menulis file opsi client root MySQL sementara dengan permission ketat
+4. menghasilkan sertifikat self-signed jika belum ada
+5. merender konfigurasi Apache dari template
+6. menginisialisasi MySQL jika data directory masih kosong
+7. membuat database dan user aplikasi
+8. menjalankan MySQL dan Apache sekaligus
+9. menangani shutdown keduanya dengan graceful cleanup
 
 ## 14. CI dan Quality Check
 

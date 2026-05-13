@@ -75,6 +75,9 @@ Script tambahan:
 - `bun run build:css`
 - `bun run vendor:motion`
 - `bun run commitlint`
+- `bun run commitlint:install-hook`
+
+`bun run commitlint:install-hook` akan mengaktifkan hook Git agar `commit` secara otomatis divalidasi oleh Commitlint dengan konvensi conventional commit.
 
 `bun run vendor:motion` menyalin bundle browser terbaru dari paket `motion` ke `public/vendor/motion.js`, berguna setelah upgrade dependensi animasi frontend.
 

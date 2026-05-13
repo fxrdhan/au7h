@@ -20,6 +20,7 @@ MYSQL_BIND_ADDRESS="${MYSQL_BIND_ADDRESS:-127.0.0.1}"
 MYSQL_ALLOW_REMOTE="${MYSQL_ALLOW_REMOTE:-0}"
 MYSQL_SOCKET="${MYSQL_SOCKET:-/var/run/mysqld/mysqld.sock}"
 MYSQL_PID_FILE="${MYSQL_PID_FILE:-/var/run/mysqld/mysqld.pid}"
+MYSQL_ROOT_CLIENT_CONFIG="${MYSQL_ROOT_CLIENT_CONFIG:-/var/run/mysqld/root-client.cnf}"
 ACL_ENABLED="${ACL_ENABLED:-${ENABLE_CONTAINER_ACL:-0}}"
 ACL_WEB_CIDR="${ACL_WEB_CIDR:-0.0.0.0/0}"
 ACL_DB_CIDR="${ACL_DB_CIDR:-}"
@@ -38,6 +39,18 @@ validate_mysql_identifier() {
       exit 1
       ;;
   esac
+}
+
+write_mysql_root_client_config() {
+  rm -f "${MYSQL_ROOT_CLIENT_CONFIG}"
+  {
+    printf '[client]\n'
+    printf 'user=root\n'
+    printf 'password=%s\n' "${MYSQL_ROOT_PASSWORD}"
+    printf 'protocol=socket\n'
+    printf 'socket=%s\n' "${MYSQL_SOCKET}"
+  } > "${MYSQL_ROOT_CLIENT_CONFIG}"
+  chmod 600 "${MYSQL_ROOT_CLIENT_CONFIG}"
 }
 
 mkdir -p "${APP_DATA_DIR}" "${CERT_DIR}" "${MYSQL_DATA_DIR}" /var/run/mysqld
@@ -99,7 +112,7 @@ fi
 export APP_PORT_HTTP APP_PORT_HTTPS PUBLIC_HTTPS_PORT PUBLIC_HTTPS_SUFFIX
 export APP_DATA_DIR CERT_DIR TLS_CERT_PATH TLS_KEY_PATH
 export DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD
-export MYSQL_DATA_DIR MYSQL_DATABASE MYSQL_APP_USER MYSQL_PORT MYSQL_BIND_ADDRESS MYSQL_ALLOW_REMOTE MYSQL_SOCKET MYSQL_PID_FILE
+export MYSQL_DATA_DIR MYSQL_DATABASE MYSQL_APP_USER MYSQL_PORT MYSQL_BIND_ADDRESS MYSQL_ALLOW_REMOTE MYSQL_SOCKET MYSQL_PID_FILE MYSQL_ROOT_CLIENT_CONFIG
 export ACL_ENABLED ACL_WEB_CIDR ACL_DB_CIDR ACL_ALLOW_ICMP
 export PEPPER_SECRET ENCRYPTION_KEY MYSQL_ROOT_PASSWORD MYSQL_APP_PASSWORD
 
@@ -124,6 +137,7 @@ envsubst '${APP_PORT_HTTPS} ${TLS_CERT_PATH} ${TLS_KEY_PATH}' \
 a2ensite http-redirect app-ssl >/dev/null
 chown -R www-data:www-data "${APP_DATA_DIR}"
 chown -R mysql:mysql "${MYSQL_DATA_DIR}" /var/run/mysqld
+write_mysql_root_client_config
 
 MYSQL_BOOTSTRAP_REQUIRED=0
 if [ ! -d "${MYSQL_DATA_DIR}/mysql" ]; then
@@ -165,7 +179,7 @@ ${REMOTE_BOOTSTRAP_SQL}
 FLUSH PRIVILEGES;
 EOF
 else
-  mysql --protocol=socket --socket="${MYSQL_SOCKET}" -uroot "-p${MYSQL_ROOT_PASSWORD}" <<EOF
+  mysql --defaults-extra-file="${MYSQL_ROOT_CLIENT_CONFIG}" <<EOF
 CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -192,8 +206,8 @@ cleanup() {
     apache2ctl -k graceful-stop >/dev/null 2>&1 || kill "${APACHE_PID}" >/dev/null 2>&1 || true
   fi
 
-  if mysqladmin --protocol=socket --socket="${MYSQL_SOCKET}" -uroot "-p${MYSQL_ROOT_PASSWORD}" ping --silent >/dev/null 2>&1; then
-    mysqladmin --protocol=socket --socket="${MYSQL_SOCKET}" -uroot "-p${MYSQL_ROOT_PASSWORD}" shutdown >/dev/null 2>&1 || true
+  if mysqladmin --defaults-extra-file="${MYSQL_ROOT_CLIENT_CONFIG}" ping --silent >/dev/null 2>&1; then
+    mysqladmin --defaults-extra-file="${MYSQL_ROOT_CLIENT_CONFIG}" shutdown >/dev/null 2>&1 || true
   elif kill -0 "${MYSQLD_PID}" 2>/dev/null; then
     kill "${MYSQLD_PID}" >/dev/null 2>&1 || true
   fi

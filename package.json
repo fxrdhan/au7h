@@ -20,7 +20,8 @@
     "vendor:motion": "bun ./scripts/sync-motion-vendor.mjs",
     "test": "bun run test:php",
     "test:php": "php tests/AuthSecurityTest.php",
-    "commitlint": "commitlint --config commitlint.config.cjs"
+    "commitlint": "commitlint --config commitlint.config.cjs",
+    "commitlint:install-hook": "git config core.hooksPath .githooks"
   },
   "keywords": [
     "commitlint"
