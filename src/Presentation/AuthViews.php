@@ -68,6 +68,12 @@ function render_auth_form_card(string $mode, ?array $flash): string
             "username",
             "johndoe",
             $usernameValue,
+            null,
+            true,
+            $isRegister
+                ? 'data-username-input aria-describedby="username-validation-status"'
+                : "",
+            $isRegister ? render_username_status() : "",
         ) .
         '
           ' .

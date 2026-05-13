@@ -227,6 +227,20 @@ function render_confirm_password_status(): string
         </p>';
 }
 
+function render_username_status(): string
+{
+    return '
+        <p id="username-validation-status" data-username-status class="mt-1.5 flex max-h-0 -translate-y-1 items-center gap-1.5 overflow-hidden text-xs font-medium leading-4 text-rose-700 opacity-0 transition-[max-height,opacity,transform] duration-200 ease-out dark:text-rose-300" aria-live="polite">
+          <span aria-hidden="true" class="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5">
+              <path d="M4.5 4.5 11.5 11.5"></path>
+              <path d="M11.5 4.5 4.5 11.5"></path>
+            </svg>
+          </span>
+          <span data-username-message></span>
+        </p>';
+}
+
 function render_layout(string $title, string $content): string
 {
     return '<!doctype html>
