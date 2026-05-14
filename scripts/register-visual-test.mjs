@@ -2,22 +2,109 @@ import { spawnSync } from "node:child_process";
 import { chromium } from "playwright";
 
 const baseUrl = process.env.AU7H_BASE_URL ?? "https://localhost:10443";
-const duplicateUsername = process.env.AU7H_DUPLICATE_USERNAME ?? "wleowleo";
-const successUsername =
-  process.env.AU7H_SUCCESS_USERNAME ?? `visual_${Date.now()}`;
-const demoPassword = "Password12345";
-const validDemoUsername = "visual_user_demo";
-const invalidUsername = "bad<script>";
-const tooLongUsername = "a".repeat(33);
-const tooLongPassword = `Aa1${"x".repeat(70)}`;
+const usernameParts = [
+  "arden",
+  "bima",
+  "cala",
+  "dira",
+  "elvan",
+  "fara",
+  "gita",
+  "hana",
+  "ivan",
+  "juno",
+  "kira",
+  "lena",
+  "mika",
+  "nara",
+  "oren",
+  "raka",
+  "sela",
+  "tama",
+  "vano",
+  "zara",
+];
+const usedUsernames = new Set();
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pick(values) {
+  return values[randomInt(0, values.length - 1)];
+}
+
+function randomToken(length, alphabet = "abcdefghijklmnopqrstuvwxyz0123456789") {
+  let value = "";
+  for (let index = 0; index < length; index += 1) {
+    value += alphabet[randomInt(0, alphabet.length - 1)];
+  }
+
+  return value;
+}
+
+function randomUsername() {
+  let username = "";
+  do {
+    username = `${pick(usernameParts)}_${pick(usernameParts)}${randomInt(10, 99)}`;
+  } while (usedUsernames.has(username));
+
+  usedUsernames.add(username);
+  return username;
+}
+
+function randomShortUsername() {
+  return randomToken(2);
+}
+
+function randomOverlongUsername() {
+  return randomToken(33);
+}
+
+function randomInvalidUsername() {
+  return `${randomUsername()}@${randomInt(10, 99)}`;
+}
+
+function randomValidPassword() {
+  return `${pick(["A", "B", "C", "D", "E"])}${randomToken(8)}${randomInt(10, 99)}`;
+}
+
+function randomShortPassword() {
+  return randomToken(randomInt(5, 7));
+}
+
+function randomPasswordWithoutUppercase() {
+  return `${randomToken(9)}${randomInt(10, 99)}`;
+}
+
+function randomPasswordWithoutNumber() {
+  return `${pick(["A", "B", "C", "D", "E"])}${randomToken(12, "abcdefghijklmnopqrstuvwxyz")}`;
+}
+
+function randomOverlongPassword() {
+  return `${pick(["A", "B", "C", "D", "E"])}${randomToken(71)}${randomInt(0, 9)}`;
+}
+
+const duplicateUsername = process.env.AU7H_DUPLICATE_USERNAME ?? randomUsername();
+const successUsername = process.env.AU7H_SUCCESS_USERNAME ?? randomUsername();
+const demoPassword = randomValidPassword();
+const validDemoUsername = randomUsername();
+const shortUsername = randomShortUsername();
+const invalidUsername = randomInvalidUsername();
+const tooLongUsername = randomOverlongUsername();
+const shortPassword = randomShortPassword();
+const passwordWithoutUppercase = randomPasswordWithoutUppercase();
+const passwordWithoutNumber = randomPasswordWithoutNumber();
+const mismatchedPassword = randomValidPassword();
+const tooLongPassword = randomOverlongPassword();
+const longPasswordUsername = randomUsername();
+const confirmMismatchUsername = randomUsername();
+const csrfUsername = randomUsername();
 const rateLimitUsernames = [
-  "r1",
-  "r2",
-  "r3",
-  "rate_demo_four",
-  "rate_demo_one",
-  "rate_demo_two",
-  "rate_demo_three",
+  randomShortUsername(),
+  randomShortUsername(),
+  randomShortUsername(),
+  randomUsername(),
 ];
 const slowMo = Number.parseInt(process.env.PW_SLOWMO ?? "650", 10);
 const holdMs = Number.parseInt(process.env.PW_HOLD_MS ?? "2100", 10);
@@ -226,7 +313,7 @@ async function recordServerFailure(page, username) {
       },
       method: "POST",
     });
-  }, { password: "Password12345", username });
+  }, { password: demoPassword, username });
 }
 
 async function main() {
@@ -264,17 +351,17 @@ async function main() {
     await pause(page);
 
     await showStep(page, "02. Short username is rejected on blur", [
-      inputLine({ confirmPassword: "", password: "", username: "ab" }),
+      inputLine({ confirmPassword: "", password: "", username: shortUsername }),
       "Action: Type the username, then move focus to the password field.",
       "Expected: The frontend shows the username length error without submitting.",
     ]);
-    await username.fill("ab");
+    await username.fill(shortUsername);
     await password.click();
     await pause(page);
 
     await showStep(page, "03. Username with disallowed characters is rejected", [
       inputLine({ confirmPassword: "", password: "", username: invalidUsername }),
-      "Action: Type a username containing angle brackets, then blur the field.",
+      "Action: Type a username containing a disallowed symbol, then blur the field.",
       "Expected: The frontend rejects characters outside the allowed username policy.",
     ]);
     await username.fill(invalidUsername);
@@ -297,40 +384,40 @@ async function main() {
     await showStep(page, "05. Too-short password is rejected on blur", [
       inputLine({
         confirmPassword: "",
-        password: "short",
+        password: shortPassword,
         username: validDemoUsername,
       }),
       "Action: Use a valid username, type a short password, then move to confirmation.",
       "Expected: The password field shakes and the missing checklist rules pulse red.",
     ]);
     await username.fill(validDemoUsername);
-    await password.fill("short");
+    await password.fill(shortPassword);
     await confirmPassword.click();
     await pause(page, 1.25);
 
     await showStep(page, "06. Password without uppercase is rejected", [
       inputLine({
         confirmPassword: "",
-        password: "lowercase12345",
+        password: passwordWithoutUppercase,
         username: validDemoUsername,
       }),
       "Action: Type a password that has length and digits but no uppercase letter.",
       "Expected: The uppercase and lowercase rule remains unmet.",
     ]);
-    await password.fill("lowercase12345");
+    await password.fill(passwordWithoutUppercase);
     await confirmPassword.click();
     await pause(page, 1.15);
 
     await showStep(page, "07. Password without a number is rejected", [
       inputLine({
         confirmPassword: "",
-        password: "PasswordOnly",
+        password: passwordWithoutNumber,
         username: validDemoUsername,
       }),
       "Action: Type a password that has length and mixed case but no digit.",
       "Expected: The number rule remains unmet.",
     ]);
-    await password.fill("PasswordOnly");
+    await password.fill(passwordWithoutNumber);
     await confirmPassword.click();
     await pause(page, 1.15);
 
@@ -348,14 +435,14 @@ async function main() {
 
     await showStep(page, "09. Mismatched confirmation is stopped before submit", [
       inputLine({
-        confirmPassword: "Password99999",
+        confirmPassword: mismatchedPassword,
         password: demoPassword,
         username: validDemoUsername,
       }),
       "Action: Type a different confirmation password, then click Create Account.",
       "Expected: Frontend validation blocks the request before it reaches PHP.",
     ]);
-    await confirmPassword.fill("Password99999");
+    await confirmPassword.fill(mismatchedPassword);
     await createAccount.click();
     await pause(page, 1.25);
 
@@ -399,7 +486,7 @@ async function main() {
         inputLine({
           confirmPassword: tooLongPassword,
           password: tooLongPassword,
-          username: "long_password_demo",
+          username: longPasswordUsername,
         }),
         "Action: Bypass frontend checks and submit a 73 character password.",
         "Expected: PHP password validation rejects the payload.",
@@ -408,24 +495,24 @@ async function main() {
     await submitBypassingBrowserValidation(page, {
       confirmPassword: tooLongPassword,
       password: tooLongPassword,
-      username: "long_password_demo",
+      username: longPasswordUsername,
     });
     await pause(page, 1.35);
 
     await gotoRegister(page);
     await showStep(page, "13. Server guard rejects confirmation mismatch", [
       inputLine({
-        confirmPassword: "Password99999",
+        confirmPassword: mismatchedPassword,
         password: demoPassword,
-        username: "confirm_demo_user",
+        username: confirmMismatchUsername,
       }),
       "Action: Bypass frontend checks and submit different password values.",
       "Expected: PHP rejects the mismatch and preserves the username on register.",
     ]);
     await submitBypassingBrowserValidation(page, {
-      confirmPassword: "Password99999",
+      confirmPassword: mismatchedPassword,
       password: demoPassword,
-      username: "confirm_demo_user",
+      username: confirmMismatchUsername,
     });
     await pause(page, 1.35);
 
@@ -456,7 +543,7 @@ async function main() {
         confirmPassword: demoPassword,
         csrfToken: "0".repeat(64),
         password: demoPassword,
-        username: "csrf_demo_user",
+        username: csrfUsername,
       }),
       "Action: Bypass the form and replace the CSRF token with 64 zeroes.",
       "Expected: The server rejects the request before registration validation runs.",
@@ -465,7 +552,7 @@ async function main() {
       confirmPassword: demoPassword,
       csrfToken: "0".repeat(64),
       password: demoPassword,
-      username: "csrf_demo_user",
+      username: csrfUsername,
     });
     if (csrfStatus !== 403) {
       throw new Error(`Expected CSRF response status 403, got ${csrfStatus}.`);
@@ -475,22 +562,22 @@ async function main() {
     resetRateLimit();
     await gotoRegister(page);
     await showStep(page, "16. Register rate limit blocks the fourth failed attempt", [
-      "Setup requests: POST username=\"r1\", username=\"r2\", username=\"r3\" with a valid password. Each username is too short, so each request is a backend validation failure.",
+      `Setup requests: POST username="${rateLimitUsernames[0]}", username="${rateLimitUsernames[1]}", username="${rateLimitUsernames[2]}" with a valid password. Each username is too short, so each request is a backend validation failure.`,
       inputLine({
         confirmPassword: demoPassword,
         password: demoPassword,
-        username: "rate_demo_four",
+        username: rateLimitUsernames[3],
       }),
       "Action: After three backend failures, submit one more register request.",
       "Expected: The server returns HTTP 429 Too Many Requests.",
     ]);
-    await recordServerFailure(page, "r1");
-    await recordServerFailure(page, "r2");
-    await recordServerFailure(page, "r3");
+    await recordServerFailure(page, rateLimitUsernames[0]);
+    await recordServerFailure(page, rateLimitUsernames[1]);
+    await recordServerFailure(page, rateLimitUsernames[2]);
     const rateLimitStatus = await submitBypassingBrowserValidation(page, {
       confirmPassword: demoPassword,
       password: demoPassword,
-      username: "rate_demo_four",
+      username: rateLimitUsernames[3],
     });
     if (rateLimitStatus !== 429) {
       throw new Error(
