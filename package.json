@@ -20,6 +20,7 @@
     "vendor:motion": "bun ./scripts/sync-motion-vendor.mjs",
     "test": "bun run test:php",
     "test:php": "php tests/AuthSecurityTest.php",
+    "test:register:visual": "bunx --bun --package playwright node scripts/register-visual-test.mjs",
     "commitlint": "commitlint --config commitlint.config.cjs",
     "commitlint:install-hook": "git config core.hooksPath .githooks"
   },
