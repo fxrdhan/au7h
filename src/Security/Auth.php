@@ -40,8 +40,8 @@ function verify_csrf_or_fail(?string $submittedToken): void
         render_page_response(
             403,
             render_error_page(
-                "Form ditolak",
-                "Token integritas form tidak valid atau sudah kedaluwarsa.",
+                "Form Rejected",
+                "The form integrity token is invalid or has expired.",
             ),
         );
     }
@@ -52,14 +52,14 @@ function validate_username(string $username): array
     $trimmed = trim($username);
 
     if (strlen($trimmed) < 3 || strlen($trimmed) > 32) {
-        return ["ok" => false, "message" => "Username harus 3-32 karakter."];
+        return ["ok" => false, "message" => "Username must be 3-32 characters."];
     }
 
     if (!preg_match('/^[A-Za-z0-9_. -]+$/', $trimmed)) {
         return [
             "ok" => false,
             "message" =>
-                "Username hanya boleh huruf, angka, spasi, titik, strip, atau underscore.",
+                "Username may only contain letters, numbers, spaces, dots, hyphens, or underscores.",
         ];
     }
 
@@ -69,7 +69,7 @@ function validate_username(string $username): array
 function validate_password(string $password): array
 {
     if (strlen($password) < 10 || strlen($password) > 72) {
-        return ["ok" => false, "message" => "Password harus 10-72 karakter."];
+        return ["ok" => false, "message" => "Password must be 10-72 characters."];
     }
 
     $checks =
@@ -81,7 +81,7 @@ function validate_password(string $password): array
         return [
             "ok" => false,
             "message" =>
-                "Password harus memuat huruf kecil, huruf besar, dan angka.",
+                "Password must include lowercase letters, uppercase letters, and a number.",
         ];
     }
 
@@ -186,8 +186,8 @@ function enforce_auth_rate_limit(string $bucket, ?string $subject = null): void
         render_page_response(
             429,
             render_error_page(
-                "Terlalu banyak percobaan",
-                "Coba lagi beberapa menit lagi.",
+                "Too Many Attempts",
+                "Try again in a few minutes.",
             ),
         );
     }

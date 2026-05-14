@@ -18,8 +18,8 @@ try {
     render_page_response(
         500,
         render_error_page(
-            "Data akun tidak bisa dibaca",
-            "Kunci enkripsi untuk username tidak cocok.",
+            "Account Data Cannot Be Read",
+            "The username encryption key does not match.",
         ),
     );
 }

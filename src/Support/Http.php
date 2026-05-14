@@ -116,8 +116,8 @@ function require_post_method(): void
         render_page_response(
             405,
             render_error_page(
-                "Metode tidak diizinkan",
-                "Gunakan request POST untuk aksi ini.",
+                "Method Not Allowed",
+                "Use a POST request for this action.",
             ),
         );
     }

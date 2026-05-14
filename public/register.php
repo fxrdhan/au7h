@@ -27,7 +27,7 @@ if (!$usernameValidation["ok"] || !$passwordValidation["ok"]) {
 
 if (!hash_equals((string) $passwordValidation["value"], $confirmPassword)) {
     record_auth_rate_limit_failure("register");
-    set_flash("error", "Konfirmasi password tidak cocok.", [
+    set_flash("error", "Password confirmation does not match.", [
         "username" => $submittedUsername,
     ]);
     redirect_to("/?mode=register");
@@ -39,7 +39,7 @@ $lookup = username_lookup($username);
 
 if (find_user_by_lookup($lookup) !== null) {
     record_auth_rate_limit_failure("register");
-    set_flash("error", "Username sudah terdaftar. Gunakan username lain.", [
+    set_flash("error", "Username is already registered. Use another username.", [
         "username" => $username,
     ]);
     redirect_to("/?mode=register");
@@ -53,15 +53,15 @@ try {
     );
 
     clear_auth_rate_limit("register");
-    set_flash("success", "Registrasi berhasil. Silakan login.");
+    set_flash("success", "Registration successful. Please sign in.");
     redirect_to("/?mode=login");
 } catch (Throwable $exception) {
     error_log($exception->getMessage());
     render_page_response(
         500,
         render_error_page(
-            "Registrasi gagal",
-            "Server gagal menyimpan akun baru.",
+            "Registration Failed",
+            "The server could not save the new account.",
         ),
     );
 }

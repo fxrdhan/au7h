@@ -223,7 +223,7 @@ function render_confirm_password_status(): string
               <path d="M11.5 4.5 4.5 11.5"></path>
             </svg>
           </span>
-          <span data-confirm-password-message>tidak cocok dengan password</span>
+          <span data-confirm-password-message>does not match password</span>
         </p>';
 }
 
@@ -244,7 +244,7 @@ function render_username_status(): string
 function render_layout(string $title, string $content): string
 {
     return '<!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

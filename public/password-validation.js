@@ -14,15 +14,15 @@
 
     const ruleState = getRuleState(password)
     if (!ruleState.length) {
-      return "Password harus minimal 10 karakter."
+      return "Password must be at least 10 characters."
     }
 
     if (!ruleState.case) {
-      return "Password harus memuat huruf kecil dan huruf besar."
+      return "Password must include lowercase and uppercase letters."
     }
 
     if (!ruleState.number) {
-      return "Password harus memuat angka."
+      return "Password must include a number."
     }
 
     return ""
@@ -35,11 +35,11 @@
     }
 
     if (trimmed.length < 3 || trimmed.length > 32) {
-      return "Username harus 3-32 karakter."
+      return "Username must be 3-32 characters."
     }
 
     if (!/^[A-Za-z0-9_. -]+$/.test(trimmed)) {
-      return "Username hanya boleh huruf, angka, spasi, titik, strip, atau underscore."
+      return "Username may only contain letters, numbers, spaces, dots, hyphens, or underscores."
     }
 
     return ""
@@ -342,7 +342,7 @@
     }
 
     if (message instanceof HTMLElement) {
-      message.textContent = isMatch ? "cocok dengan password" : "tidak cocok dengan password"
+      message.textContent = isMatch ? "matches password" : "does not match password"
     }
   }
 
@@ -362,7 +362,7 @@
     const isVisible = confirmPassword.value.length > 0
     const isMatch = password.value === confirmPassword.value
     setConfirmPasswordStatus(status, isVisible, isMatch)
-    confirmPassword.setCustomValidity(isVisible && !isMatch ? "Konfirmasi password tidak cocok." : "")
+    confirmPassword.setCustomValidity(isVisible && !isMatch ? "Password confirmation does not match." : "")
 
     return !isVisible || isMatch
   }
