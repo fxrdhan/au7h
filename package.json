@@ -21,6 +21,7 @@
     "db:users:raw": "bun scripts/db-users-raw.mjs",
     "db:user:delete": "bun scripts/db-delete-user-by-id.mjs",
     "db:rate-limits": "docker compose -f compose.dev.yaml exec app sh -lc 'mysql --defaults-extra-file=\"$MYSQL_ROOT_CLIENT_CONFIG\" \"$DB_NAME\" -e \"SELECT * FROM auth_rate_limits;\"'",
+    "db:rate-limits:clear": "docker compose -f compose.dev.yaml exec app sh -lc 'mysql --defaults-extra-file=\"$MYSQL_ROOT_CLIENT_CONFIG\" \"$DB_NAME\" -e \"DELETE FROM auth_rate_limits; SELECT ROW_COUNT() AS deleted_rows;\"'",
     "dev:css": "tailwindcss -i ./resources/tailwind.css -o ./public/styles.css --watch",
     "build:css": "tailwindcss -i ./resources/tailwind.css -o ./public/styles.css --minify",
     "vendor:motion": "bun ./scripts/sync-motion-vendor.mjs",
